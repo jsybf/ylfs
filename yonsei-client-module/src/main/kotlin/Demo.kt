@@ -1,5 +1,6 @@
 package io.gitp.ysfl.client
 
+import io.gitp.ysfl.client.client.YonseiClients
 import io.gitp.ysfl.client.payload.DptGroupPayloadVo
 import io.gitp.ysfl.client.payload.DptPayloadVo
 import io.gitp.ysfl.client.response.DptGroupResp
@@ -13,6 +14,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Year
+import java.util.concurrent.CompletableFuture
 
 fun requestDptGroup(year: Year, semester: Semester): HttpResponse<String> {
     val dptPayload: DptGroupPayloadVo = DptGroupPayloadVo(year, semester)
@@ -66,6 +68,23 @@ fun decodeDptResponse(respStr: String): List<DptResp> {
     return json.decodeFromJsonElement<List<DptResp>>(postRefined)
 }
 
+fun demo2() {
+    val reqYear = Year.of(2025)
+    val reqSemester = Semester.FIRST
+    val dptGroupPayload = DptGroupPayloadVo(reqYear, reqSemester)
+    YonseiClients.DptGroupClient
+        .requestAndMapToList(dptGroupPayload.buildPayloadStr()).get()
+        .associate { dptGroup: DptGroupResp ->
+            val dptPayload = DptPayloadVo(dptGroup.dptGroupId, Year.of(2025), Semester.FIRST).buildPayloadStr()
+            val dptResp: CompletableFuture<List<DptResp>> = YonseiClients.DptClient.requestAndMapToList(dptPayload)
+            Pair(dptGroup, dptResp)
+        }
+        .onEach { (dptGroup, dptList) ->
+            println(dptGroup)
+            dptList.get().forEach { println("\t $it") }
+        }
+}
+
 
 fun main() {
     // val dptGroupResp: HttpResponse<String> = requestDptGroup(Year.of(2025), Semester.FIRST)
@@ -76,14 +95,32 @@ fun main() {
     // dptRespJson.forEach { println(it) }
     // dptRespList.forEach { println(it) }
 
-    val dptGroupResponse: List<DptGroupResp> = decodeDptGroupResponse(requestDptGroup(Year.of(2025), Semester.FIRST).body())
-    dptGroupResponse
-        .associate { dptGroupResp ->
-            val dptRespStr = requestDpt(dptGroupResp.dptGroupId, Year.of(2025), Semester.FIRST)
-            val dptResp: List<DptResp> = decodeDptResponse(dptRespStr.body())
-            return@associate Pair(dptGroupResp, dptResp)
-        }.onEach { (dptGroup, dpt) ->
-            println(dptGroup)
-            dpt.forEach { println("\t${it}") }
-        }
+    demo2()
+
+    // val dptGroupClient: DptGroupClient = DptGroupClient()
+    // val dptClient: DptClient = DptClient()
+    //
+    // val dptGroupList: List<DptGroupResp> = dptGroupClient
+    //     .requestAndMapToList(DptGroupPayloadVo(Year.of(2025), Semester.FIRST).buildPayloadStr())
+    //     .get()
+    //
+    // dptGroupList.associate { dptGroup: DptGroupResp ->
+    //     val payload = DptPayloadVo(dptGroup.dptGroupId, Year.of(2025), Semester.FIRST).buildPayloadStr()
+    //     val dptResp: CompletableFuture<List<DptResp>> = dptClient.requestAndMapToList(payload)
+    //     Pair(dptGroup, dptResp)
+    // }.onEach { (dptGroup, dptList) ->
+    //     println(dptGroup)
+    //     dptList.get().forEach { println("\t $it") }
+    // }
+
+    // val dptGroupResponse: List<DptGroupResp> = decodeDptGroupResponse(requestDptGroup(Year.of(2025), Semester.FIRST).body())
+    // dptGroupResponse
+    //     .associate { dptGroupResp ->
+    //         val dptRespStr = requestDpt(dptGroupResp.dptGroupId, Year.of(2025), Semester.FIRST)
+    //         val dptResp: List<DptResp> = decodeDptResponse(dptRespStr.body())
+    //         return@associate Pair(dptGroupResp, dptResp)
+    //     }.onEach { (dptGroup, dpt) ->
+    //         println(dptGroup)
+    //         dpt.forEach { println("\t${it}") }
+    //     }
 }
