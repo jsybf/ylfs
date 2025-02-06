@@ -4,10 +4,13 @@
 [versions]
 ktor_version = "2.3.13"
 kotlin_version = "2.1.10"
+exposed_version = "0.59.0"
 
 [libraries]
-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor_version" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.8.0" }
+mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version = "8.0.33" }
+exposed-core = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed_version" }
+exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed_version" }
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin_version" }
