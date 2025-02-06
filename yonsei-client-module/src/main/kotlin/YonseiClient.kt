@@ -7,6 +7,7 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import java.net.URI
@@ -16,13 +17,13 @@ import java.net.http.HttpResponse
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
-class YonseiClient<T : YonseiResp>(
+class YonseiClient<T : Any>(
     private val requestUrl: String,
     private val kclass: KClass<T>,
     private val postJsonRefiner: ((JsonElement) -> JsonElement)
 ) {
     companion object {
-        inline fun <reified V : YonseiResp> of(requestUrl: String, noinline postJsonRefiner: ((JsonElement) -> JsonElement)): YonseiClient<V> {
+        inline fun <reified V : Any> of(requestUrl: String, noinline postJsonRefiner: ((JsonElement) -> JsonElement)): YonseiClient<V> {
             return YonseiClient<V>(requestUrl, V::class, postJsonRefiner)
         }
     }
@@ -62,5 +63,11 @@ object YonseiClients {
     val dptGroupClient = YonseiClient.of<DptGroupResp>(
         requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
         postJsonRefiner = { json -> json.jsonObject["dsUnivCd"] ?: throw IllegalStateException("exception while post json refining") }
+    )
+    val lectureClientTmp = YonseiClient.of<JsonObject>(
+        "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do",
+        postJsonRefiner = { jsonElement: JsonElement ->
+            jsonElement.jsonObject["dsSles251"] ?: throw IllegalStateException("exception while post json refining")
+        }
     )
 }

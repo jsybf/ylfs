@@ -2,8 +2,10 @@ package io.gitp.ysfl.client
 
 import io.gitp.ysfl.client.payload.DptGroupPayloadVo
 import io.gitp.ysfl.client.payload.DptPayloadVo
+import io.gitp.ysfl.client.payload.LecturePayloadVo
 import io.gitp.ysfl.client.response.DptGroupResp
 import io.gitp.ysfl.client.response.DptResp
+import kotlinx.serialization.json.*
 import java.time.Year
 import java.util.concurrent.CompletableFuture
 
@@ -28,6 +30,32 @@ fun demo1() {
 
 }
 
+fun demo2() {
+    val lectureClient: YonseiClient<DptResp> = YonseiClient.of<DptResp>(
+        "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do",
+        postJsonRefiner = { jsonElement: JsonElement ->
+            jsonElement.jsonObject["dsSles251"] ?: throw IllegalStateException("exception while post json refining")
+        }
+    )
+
+    val payload = LecturePayloadVo(Year.of(2025), Semester.FIRST, "s1102", "0201")
+    val respBody: String = lectureClient.request(payload.build()).get().body()
+    Json.parseToJsonElement(respBody)
+        .let { it.jsonObject["dsSles251"]!! }
+        .jsonArray
+        .onEach {
+            println(it.jsonObject)
+        }
+}
+
+fun demo3() {
+    val lectureClient: YonseiClient<JsonObject> = YonseiClients.lectureClientTmp
+
+    val payload = LecturePayloadVo(Year.of(2025), Semester.FIRST, "s1102", "0201")
+    lectureClient.requestAndMap(payload.build()).get().forEach { println(it) }
+}
+
 fun main() {
-    demo1()
+    // demo1()
+    demo2()
 }
