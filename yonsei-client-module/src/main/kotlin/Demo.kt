@@ -1,9 +1,9 @@
-package io.gitp.ysfl.db
+package io.gitp.ysfl.client
 
-import io.gitp.ysfl.db.payload.DptGroupPayloadVo
-import io.gitp.ysfl.db.payload.DptPayloadVo
-import io.gitp.ysfl.db.response.DptGroupResp
-import io.gitp.ysfl.db.response.DptResp
+import io.gitp.ysfl.client.payload.DptGroupPayloadVo
+import io.gitp.ysfl.client.payload.DptPayloadVo
+import io.gitp.ysfl.client.response.DptGroupResp
+import io.gitp.ysfl.client.response.DptResp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject

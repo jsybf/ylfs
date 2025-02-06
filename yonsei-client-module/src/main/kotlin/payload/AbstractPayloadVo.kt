@@ -1,4 +1,4 @@
-package io.gitp.ysfl.db.payload
+package io.gitp.ysfl.client.payload
 
 /**
  * 연세 학사요람검색사이트 ajax요청payload를 모방하는 역활

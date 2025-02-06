@@ -1,6 +1,6 @@
-package io.gitp.ysfl.db.payload
+package io.gitp.ysfl.client.payload
 
-import io.gitp.ysfl.db.Semester
+import io.gitp.ysfl.client.Semester
 import java.time.Year
 
 class DptGroupPayloadVo(

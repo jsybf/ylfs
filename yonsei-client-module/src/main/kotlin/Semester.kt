@@ -1,4 +1,4 @@
-package io.gitp.ysfl.db
+package io.gitp.ysfl.client
 
 enum class Semester(val code: Int) {
     FIRST(10),

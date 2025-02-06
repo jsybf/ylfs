@@ -1,4 +1,4 @@
-package io.gitp.ysfl.db.response
+package io.gitp.ysfl.client.response
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
