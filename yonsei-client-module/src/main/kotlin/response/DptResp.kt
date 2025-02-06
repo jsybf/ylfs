@@ -9,4 +9,4 @@ data class DptResp(
     val dptName: String,
     @SerialName("deptCd")
     val dptId: String
-)
+) : YonseiResp

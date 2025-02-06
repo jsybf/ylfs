@@ -28,7 +28,7 @@ abstract class AbstractPayloadVo() {
     // for debugging perpuse
     fun buildPayloadMap(): Map<String, String> = this.getPayloadMap() + defaultPayload + commonDefaultPayload
 
-    fun buildPayloadStr(): String = buildPayloadMap()
+    fun build(): String = buildPayloadMap()
         .map { (key, value) -> "${key}=${value}" }
         .reduce { acc: String, s: String -> "${acc}&${s}" }
 }
