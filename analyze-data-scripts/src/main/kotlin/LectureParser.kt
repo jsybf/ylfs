@@ -27,10 +27,26 @@ object LectureParser {
 
     // @formatter:off
     internal fun tokenizeClassroom(classroomRaw: String): List<String> {
+
+        // 체육과목의 강의실들중 댑부분이 (스포츠(다목적실))/(볼링장) 이런형태이다.
+        // (스포츠-다목적실)/(볼링장) 이렇게 바꿔주자.
+        val regex:Regex = Regex("""\((?<building>[가-힣0-9]+)\((?<address>[가-힣0-9]+)\)\)_?""")
+
+        val classroomRaw1 = regex
+            .findAll(classroomRaw)
+            .map {
+                val building = it.groups["building"]!!.value
+                val address = it.groups["address"]!!.value
+                "${building}-${address}"
+            }
+            .joinToString("/")
+            .takeIf { it != "" }
+            ?: classroomRaw
+
         val placeList = mutableListOf<String>()
         val curToken = StringBuilder()
 
-        classroomRaw.forEach {
+        classroomRaw1.forEach {
             when (it) {
                 '/', '(', ')' -> { placeList.add(curToken.toString());curToken.clear() }
                 else -> { curToken.append(it) }
@@ -89,6 +105,7 @@ sealed interface ClassroomUnion {
                 Regex("""^([A-Za-z\-0-9]+)$"""), // edge case 3 ex) IBS610
                 Regex("""^([가-힣]+)$"""), // normal case 1  ex) 백양누리광장, 석산홀세미나실
                 Regex("""^([가-힣]+[a-zA-Z]{0,2})([0-9]+-?[A-Z0-9]+)$"""), // normal case 2 ex) 대별B101, 삼312,외627-1
+                Regex("""^([가-힣]+[0-9]{0,2})-([가-힣]+[0-9]{0,3})$"""), // normal case 2 ex) 대별B101, 삼312,외627-1
             )
 
             fun of(raw: String): ClassroomUnion.OffLine = regexList

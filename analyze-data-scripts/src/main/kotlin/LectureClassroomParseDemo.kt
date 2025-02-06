@@ -10,19 +10,7 @@ fun main() {
 
     val classrooms = lectureDuckDBService.retriveAll("select classroom from lecture")
 
-
-    val physicalExcluded = classrooms.filterNotNull().filter {
-        var parCnt = 0
-        it.forEach { c ->
-            if (c == '(') parCnt++
-            else if (c == ')') parCnt--
-
-            if (1 < parCnt) return@filter false
-        }
-        true
-    }.also { println("size of physicalExclude: ${it.size}") }
-
-    physicalExcluded
+    classrooms.filterNotNull()
         .map { LectureParser.parseClassroom(it) }
         .onEach { println(it) }
 
