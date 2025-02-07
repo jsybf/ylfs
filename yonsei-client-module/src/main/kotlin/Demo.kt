@@ -5,7 +5,10 @@ import io.gitp.ysfl.client.payload.DptPayloadVo
 import io.gitp.ysfl.client.payload.LecturePayloadVo
 import io.gitp.ysfl.client.response.DptGroupResp
 import io.gitp.ysfl.client.response.DptResp
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import java.time.Year
 import java.util.concurrent.CompletableFuture
 
@@ -49,10 +52,10 @@ fun demo2() {
 }
 
 fun demo3() {
-    val lectureClient: YonseiClient<JsonObject> = YonseiClients.lectureClientTmp
-
-    val payload = LecturePayloadVo(Year.of(2025), Semester.FIRST, "s1102", "0201")
-    lectureClient.requestAndMap(payload.build()).get().forEach { println(it) }
+    // val lectureClient: YonseiClient<JsonObject> = YonseiClients./*l*/ectureClientTmp
+    //
+    // val payload = LecturePayloadVo(Year.of(2025), Semester.FIRST, "s1102", "0201")
+    // lectureClient.requestAndMap(payload.build()).get().forEach { println(it) }
 }
 
 fun main() {

@@ -8,9 +8,11 @@ exposed_version = "0.59.0"
 
 [libraries]
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.8.0" }
+
 mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version = "8.0.33" }
 exposed-core = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed_version" }
 exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed_version" }
+exposed-java-time = { group = "org.jetbrains.exposed", name = "exposed-java-time", version.ref = "exposed_version" }
 
 duckdb-jdbc = { group = "org.duckdb", name = "duckdb_jdbc", version = "1.1.3" }
 

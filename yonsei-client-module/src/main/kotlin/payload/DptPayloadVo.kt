@@ -4,7 +4,7 @@ import io.gitp.ysfl.client.Semester
 import java.time.Year
 
 class DptPayloadVo(
-    val departmentGroupId: String,
+    val dptGroupId: String,
     val year: Year,
     val semester: Semester
 ) : AbstractPayloadVo() {
@@ -20,7 +20,7 @@ class DptPayloadVo(
 
     override fun getPayloadMap(): Map<String, String> {
         val payLoadMap: MutableMap<String, String> = mutableMapOf()
-        payLoadMap["%40d1%23lv2"] = departmentGroupId
+        payLoadMap["%40d1%23lv2"] = dptGroupId
         payLoadMap["%40d1%23syy"] = year.toString()
         payLoadMap["%40d1%23smtDivCd"] = semester.code.toString()
 
