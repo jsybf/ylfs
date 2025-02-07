@@ -4,14 +4,14 @@ import io.gitp.ysfl.client.payload.AbstractPayloadVo
 import io.gitp.ysfl.client.response.DptGroupResponse
 import io.gitp.ysfl.client.response.DptResponse
 import io.gitp.ysfl.client.response.LectureResponse
-import io.gitp.ysfl.client.response.YonseiResponseMarker
+import io.gitp.ysfl.client.response.YonseiResponse
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.CompletableFuture
 
-abstract class YonseiClient<T : YonseiResponseMarker>(
+abstract class YonseiClient<T : YonseiResponse>(
     private val requestUrl: String,
     private val mapper: ((HttpResponse<String>) -> T)
 ) {

@@ -4,7 +4,7 @@ import io.gitp.ysfl.client.Semester
 import io.gitp.ysfl.client.response.LectureId
 import java.time.Year
 
-public class MileagePayloadVo(
+class MileagePayloadVo(
     val year: Year,
     val semester: Semester,
     val lectureId: LectureId

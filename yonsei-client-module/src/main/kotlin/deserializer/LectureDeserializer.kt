@@ -1,7 +1,7 @@
 package io.gitp.ysfl.client.deserializer
 
-import io.gitp.ysfl.client.response.LectureId
 import io.gitp.ysfl.client.response.Lecture
+import io.gitp.ysfl.client.response.LectureId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-object LectureDeserializer : KSerializer<Lecture> {
+internal object LectureDeserializer : KSerializer<Lecture> {
     private val classroomParser = LectureClassroomParser()
     private val scheduleParser = LectureScheduleParser()
 

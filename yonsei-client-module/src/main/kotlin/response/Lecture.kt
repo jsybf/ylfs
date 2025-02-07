@@ -1,9 +1,7 @@
 package io.gitp.ysfl.client.response
 
-import io.gitp.ysfl.client.deserializer.ClassroomUnion
 import io.gitp.ysfl.client.deserializer.LectureDeserializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 @Serializable(with = LectureDeserializer::class)
 data class Lecture(
@@ -23,73 +21,40 @@ data class LectureId(
     val subId: String
 )
 
+sealed interface ClassroomUnion {
+    data class RealTimeOnline(val dumpy: Nothing? = null) : ClassroomUnion
+    data class Online(val duplicateCapability: Boolean) : ClassroomUnion
 
-fun main() {
-    val decoded: Lecture = Json.decodeFromString<Lecture>(sampleJson)
-    println(decoded)
-}
+    data class OffLine(
+        val building: String,
+        val address: String?
+    ) : ClassroomUnion {
 
-private val sampleJson = """
-{
-  "lawscSubjcgpNm": null,
-  "srclnLctreLangDivCd": "10",
-  "coprtEstblYn": "1",
-  "smtDivCd": "10",
-  "lessnSessnDivCd": "A",
-  "lctreTimeNm": "월1,2/수2",
-  "lawscSubjcFldNm": null,
-  "corseDvclsNo": "01",
-  "hy": "1,2",
-  "subsrtDivCd": "F3",
-  "subjtnb": "ECO1101",
-  "experPrctsAmt": 0,
-  "subjtSbtlNm": null,
-  "subjtClNm": "블랜디드(동영상) ",
-  "campsDivNm": "신촌",
-  "syllaUnregTrgetDivCd": "0",
-  "subjtChngGudncDivCdTm": null,
-  "onppsPrttnAmt": 0,
-  "subjtChngGudncDivCdPl": null,
-  "gradeEvlMthdDivNm": "절대평가",
-  "cdt": 3,
-  "srclnLctreYn": "1",
-  "rcognHrs": 3,
-  "cgprfNm": "지창구",
-  "subjtChngGudncDivCdPr": null,
-  "timtbDplctPermKindCd": null,
-  "atntnMattrDesc": "UIC First",
-  "usubjtnb": "B00019",
-  "lctreTimeEngNm": "Mon1,2/Wed2",
-  "rmvlcYn": "0",
-  "excstPercpFg": "1",
-  "subjtNm": "경제수학(1)",
-  "lecrmNm": "상본115/동영상(중복수강불가)",
-  "rmvlcYnNm": " ",
-  "medcHyLisup": null,
-  "gradeEvlMthdDivCd": "1",
-  "estblDeprtCd": "0201",
-  "subjtNm2": "경제수학(1)",
-  "syy": "2025",
-  "prctsCorseDvclsNo": "00",
-  "campsBusnsCd": "s1",
-  "cgprfEngNm": "Chi Chang-Koo",
-  "syySmtDivNm": "2025-1학기",
-  "estblDeprtOrd": 950,
-  "subjtnbCorsePrcts": "ECO1101-01-00",
-  "subjtUnitVal": "1000",
-  "srclnLctreLangDivNm": "영어",
-  "cgprfNndsYn": "0",
-  "estblDeprtNm": "상경대학 경제학전공",
-  "subjtEngNm": "MATHEMATICS FOR ECONOMICS I",
-  "orgSysinstDivCd": "H1",
-  "lecrmEngNm": "DWHM115/Pre-recorded lecture(Unable to take other class)",
-  "lessnSessnDivNm": "학기",
-  "subjtSbtlEngNm": null,
-  "attflUuid": null,
-  "cmptPrctsAmt": 0,
-  "tmtcYn": "0",
-  "subsrtDivNm": "전기",
-  "sysinstDivCd": "H1",
-  "lawscSubjcChrtzNm": null
+        companion object {
+            // order matters
+            private val regexList = listOf(
+                Regex("""(제[0-9]강의실)"""), // edge case 1
+                Regex("""(KLI[0-9]F-?[0-9]?)"""), // edge case 2
+                Regex("""^([A-Za-z\-0-9]+)$"""), // edge case 3 ex) IBS610
+                Regex("""^([가-힣]+)$"""), // normal case 1  ex) 백양누리광장, 석산홀세미나실
+                Regex("""^([가-힣]+[a-zA-Z]{0,2})([0-9]+-?[A-Z0-9]*)$"""), // normal case 2 ex) 대별B101, 삼312,외627-1
+                Regex("""^([가-힣]+[0-9]{0,2})-([가-힣]+[0-9]{0,3})$"""), // normal case 2 ex) 대별B101, 삼312,외627-1
+            )
+
+            internal fun of(raw: String): OffLine = regexList
+                .firstNotNullOfOrNull { regex: Regex -> regex.find(raw) }
+                ?.groupValues
+                ?.let { matchGroups ->
+                    when (matchGroups.size) {
+                        2 -> OffLine(matchGroups[1], null)
+                        3 -> OffLine(matchGroups[1], matchGroups[2])
+                        else -> throw IllegalStateException("can't parse classRoom name ${raw}")
+                    }
+                }
+                ?: throw IllegalStateException("can't parse classRoom name ${raw}")
+
+        }
+        // companion object ends
+    }
+
 }
-""".trimIndent()

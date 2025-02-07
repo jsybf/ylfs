@@ -12,14 +12,14 @@ private inline fun <reified T> deserializeResp(respBody: String, postJsonRefiner
         .let { jsonElement: JsonElement -> postJsonRefiner(jsonElement) }
         .let { jsonElement: JsonElement -> jsonMapper.decodeFromJsonElement<List<T>>(jsonElement) }
 
-interface YonseiResponseMarker
+interface YonseiResponse
 
 data class DptGroupResponse(
     val responseBody: String,
     val dptGroupList: List<DptGroup>,
-): YonseiResponseMarker {
+) : YonseiResponse {
     companion object {
-        val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
+        private val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
             json.jsonObject["dsUnivCd"] ?: throw IllegalStateException("DptResponse returned null body")
         }
 
@@ -27,12 +27,13 @@ data class DptGroupResponse(
             DptGroupResponse(responseBody, deserializeResp<DptGroup>(responseBody, postJsonRefiner))
     }
 }
+
 data class DptResponse(
     val responseBody: String,
     val dptList: List<Dpt>,
-): YonseiResponseMarker {
+) : YonseiResponse {
     companion object {
-        val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
+        private val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
             json.jsonObject["dsFaclyCd"] ?: throw IllegalStateException("DptResponse returned null body")
         }
 
@@ -43,9 +44,9 @@ data class DptResponse(
 data class LectureResponse(
     val responseBody: String,
     val lectureList: List<Lecture>,
-): YonseiResponseMarker {
+) : YonseiResponse {
     companion object {
-        val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
+        private val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
             json.jsonObject["dsSles251"] ?: throw IllegalStateException("DptResponse returned null body")
         }
 

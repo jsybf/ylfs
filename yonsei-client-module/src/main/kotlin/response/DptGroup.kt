@@ -9,4 +9,4 @@ data class DptGroup(
     val dptGroupName: String,
     @SerialName("deptCd")
     val dptGroupId: String
-) : YonseiResp
+)
