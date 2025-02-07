@@ -1,6 +1,6 @@
 package io.gitp.ysfl.db
 
-import io.gitp.ysfl.client.response.LectureResp
+import io.gitp.ysfl.client.response.Lecture
 import io.gitp.ysfl.db.LectureJsonTable.json
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
@@ -18,7 +18,7 @@ fun main() {
         LectureJsonTable
             .selectAll()
             .map { it[json] }
-            .map { Json.decodeFromString<LectureResp>(it) }
+            .map { Json.decodeFromString<Lecture>(it) }
             .filter { 1 < it.classrooms.size }
             .filter { 1 < it.schedules.size }
             .filter { it.schedules.size == it.classrooms.size }

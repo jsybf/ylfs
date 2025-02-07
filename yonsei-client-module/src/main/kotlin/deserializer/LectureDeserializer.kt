@@ -1,7 +1,7 @@
 package io.gitp.ysfl.client.deserializer
 
-import io.gitp.ysfl.client.response.LectureIdResp
-import io.gitp.ysfl.client.response.LectureResp
+import io.gitp.ysfl.client.response.LectureId
+import io.gitp.ysfl.client.response.Lecture
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -13,15 +13,15 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-object LectureDeserializer : KSerializer<LectureResp> {
+object LectureDeserializer : KSerializer<Lecture> {
     private val classroomParser = LectureClassroomParser()
     private val scheduleParser = LectureScheduleParser()
 
-    override fun deserialize(decoder: Decoder): LectureResp {
+    override fun deserialize(decoder: Decoder): Lecture {
         val jsonDecoder: JsonDecoder = decoder as? JsonDecoder ?: throw IllegalStateException("only support json deserialization")
         val lectureJson: JsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
-        val lectureId = LectureIdResp(
+        val lectureId = LectureId(
             mainId = lectureJson["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
             classDivisionId = lectureJson["estblDeprtCd"]!!.jsonPrimitive.content,
             subId = lectureJson["subjtnb"]!!.jsonPrimitive.content
@@ -34,7 +34,7 @@ object LectureDeserializer : KSerializer<LectureResp> {
 
         val professors = lectureJson["cgprfNm"]!!.jsonPrimitive.toString().split(",")
 
-        return LectureResp(
+        return Lecture(
             lectureId = lectureId,
             dptId = dptId,
             name = name,
@@ -56,5 +56,5 @@ object LectureDeserializer : KSerializer<LectureResp> {
         element<Int>("professors")
     }
 
-    override fun serialize(encoder: Encoder, value: LectureResp) = throw NotImplementedError(" serialization is not supported fuck off")
+    override fun serialize(encoder: Encoder, value: Lecture) = throw NotImplementedError(" serialization is not supported fuck off")
 }

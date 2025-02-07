@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 @Serializable(with = LectureDeserializer::class)
-data class LectureResp(
-    val lectureId: LectureIdResp,
+data class Lecture(
+    val lectureId: LectureId,
     val dptId: String,
     val name: String,
 
@@ -17,7 +17,7 @@ data class LectureResp(
     val professors: List<String>,
 )
 
-data class LectureIdResp(
+data class LectureId(
     val mainId: String,
     val classDivisionId: String,
     val subId: String
@@ -25,7 +25,7 @@ data class LectureIdResp(
 
 
 fun main() {
-    val decoded: LectureResp = Json.decodeFromString<LectureResp>(sampleJson)
+    val decoded: Lecture = Json.decodeFromString<Lecture>(sampleJson)
     println(decoded)
 }
 

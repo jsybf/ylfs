@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DptResp(
+data class Dpt(
     @SerialName("deptNm")
     val dptName: String,
     @SerialName("deptCd")

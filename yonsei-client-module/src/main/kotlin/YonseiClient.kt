@@ -1,8 +1,8 @@
 package io.gitp.ysfl.client
 
-import io.gitp.ysfl.client.response.DptGroupResp
-import io.gitp.ysfl.client.response.DptResp
-import io.gitp.ysfl.client.response.LectureResp
+import io.gitp.ysfl.client.response.DptGroup
+import io.gitp.ysfl.client.response.Dpt
+import io.gitp.ysfl.client.response.Lecture
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -71,18 +71,24 @@ class YonseiClient<T : Any>(
 }
 
 object YonseiClients {
-    val dptClient = YonseiClient.of<DptResp>(
+    val dptClient = YonseiClient.of<Dpt>(
         requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
         postJsonRefiner = { json -> json.jsonObject["dsFaclyCd"] ?: throw IllegalStateException("exception while post json refining") }
     )
-    val dptGroupClient = YonseiClient.of<DptGroupResp>(
+    val dptGroupClient = YonseiClient.of<DptGroup>(
         requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
         postJsonRefiner = { json -> json.jsonObject["dsUnivCd"] ?: throw IllegalStateException("exception while post json refining") }
     )
-    val lectureClient = YonseiClient.of<LectureResp>(
+    val lectureClient = YonseiClient.of<Lecture>(
         "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do",
         postJsonRefiner = { jsonElement: JsonElement ->
             jsonElement.jsonObject["dsSles251"] ?: throw IllegalStateException("exception while post json refining")
+        }
+    )
+    val mileageClient= YonseiClient.of<JsonElement>(
+        "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do",
+        postJsonRefiner = { jsonElement: JsonElement ->
+            jsonElement.jsonObject["dsSles440"] ?: throw IllegalStateException("exception while post json refining")
         }
     )
 }

@@ -5,9 +5,9 @@ import io.gitp.ysfl.client.YonseiClient
 import io.gitp.ysfl.client.YonseiClients
 import io.gitp.ysfl.client.payload.DptGroupPayloadVo
 import io.gitp.ysfl.client.payload.DptPayloadVo
-import io.gitp.ysfl.client.response.DptGroupResp
-import io.gitp.ysfl.client.response.DptResp
-import io.gitp.ysfl.client.response.LectureResp
+import io.gitp.ysfl.client.response.DptGroup
+import io.gitp.ysfl.client.response.Dpt
+import io.gitp.ysfl.client.response.Lecture
 import io.gitp.ysfl.db.CrawlJob
 import io.gitp.ysfl.db.DptGroupRequest
 import io.gitp.ysfl.db.DptRequest
@@ -19,9 +19,9 @@ import java.time.Year
 
 
 fun main(args: Array<String>) {
-    val dptClient: YonseiClient<DptResp> = YonseiClients.dptClient
-    val dptGroupClient: YonseiClient<DptGroupResp> = YonseiClients.dptGroupClient
-    val lectureClient: YonseiClient<LectureResp> = YonseiClients.lectureClient
+    val dptClient: YonseiClient<Dpt> = YonseiClients.dptClient
+    val dptGroupClient: YonseiClient<DptGroup> = YonseiClients.dptGroupClient
+    val lectureClient: YonseiClient<Lecture> = YonseiClients.lectureClient
 
     val jsonMapper = Json { ignoreUnknownKeys = true }
 
@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
         .request(DptGroupPayloadVo(reqYear, reqSemster).build())
         .get()
         .body()
-    val dptGroups: List<DptGroupResp> = dptGroupClient.mapRequestBodyToList(dptGroupRespBody)
+    val dptGroups: List<DptGroup> = dptGroupClient.mapRequestBodyToList(dptGroupRespBody)
 
     transaction {
         DptGroupRequest.insert {

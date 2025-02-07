@@ -6,9 +6,9 @@ import io.gitp.ysfl.client.YonseiClients
 import io.gitp.ysfl.client.payload.DptGroupPayloadVo
 import io.gitp.ysfl.client.payload.DptPayloadVo
 import io.gitp.ysfl.client.payload.LecturePayloadVo
-import io.gitp.ysfl.client.response.DptGroupResp
-import io.gitp.ysfl.client.response.DptResp
-import io.gitp.ysfl.client.response.LectureResp
+import io.gitp.ysfl.client.response.DptGroup
+import io.gitp.ysfl.client.response.Dpt
+import io.gitp.ysfl.client.response.Lecture
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
@@ -17,7 +17,7 @@ import java.time.Year
 import java.util.concurrent.CompletableFuture
 
 fun clientDemo() {
-    val lectureClient: YonseiClient<LectureResp> = YonseiClients.lectureClient
+    val lectureClient: YonseiClient<Lecture> = YonseiClients.lectureClient
     val payload = LecturePayloadVo(Year.of(2025), Semester.FIRST, "s1102", "0201")
     lectureClient.requestAndMap(payload.build()).get().forEach { println(it) }
 }
@@ -36,23 +36,23 @@ fun main() {
 
     val dptGroupPayload = DptGroupPayloadVo(year, semester)
 
-    val dptGroupList: List<DptGroupResp> = YonseiClients.dptGroupClient.requestAndMap(dptGroupPayload.build()).get()
+    val dptGroupList: List<DptGroup> = YonseiClients.dptGroupClient.requestAndMap(dptGroupPayload.build()).get()
 
-    val dptMap: List<Pair<DptGroupResp, DptResp>> = dptGroupList
+    val dptMap: List<Pair<DptGroup, Dpt>> = dptGroupList
         .associateWith { dptGroup ->
             val dptPayload = DptPayloadVo(dptGroup.dptGroupId, year, semester)
             val dptList = YonseiClients.dptClient.requestAndMap(dptPayload.build())
             dptList
         }
         .flatMap { dptMap ->
-            val dptList: List<DptResp> = dptMap.value.get()
+            val dptList: List<Dpt> = dptMap.value.get()
             dptList.map { Pair(dptMap.key, it) }
         }
 
-    val lectureMap: List<Pair<DptResp, LectureResp>> = dptMap
+    val lectureMap: List<Pair<Dpt, Lecture>> = dptMap
         .map { (dptGroup, dpt) ->
             val payload: LecturePayloadVo = LecturePayloadVo(year, semester, dptGroup.dptGroupId, dpt.dptId)
-            val lectures: CompletableFuture<List<LectureResp>> = YonseiClients.lectureClient.requestAndMap(payload.build())
+            val lectures: CompletableFuture<List<Lecture>> = YonseiClients.lectureClient.requestAndMap(payload.build())
             Pair(dpt, lectures)
         }
         .flatMap { (dpt, lectures) ->
