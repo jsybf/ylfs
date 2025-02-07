@@ -1,13 +1,11 @@
 package io.gitp.ysfl.db.load
 
-import io.gitp.ysfl.client.Semester
-import io.gitp.ysfl.client.YonseiClient
-import io.gitp.ysfl.client.YonseiClients
+import io.gitp.ysfl.client.*
 import io.gitp.ysfl.client.payload.DptGroupPayloadVo
 import io.gitp.ysfl.client.payload.DptPayloadVo
-import io.gitp.ysfl.client.response.DptGroup
-import io.gitp.ysfl.client.response.Dpt
-import io.gitp.ysfl.client.response.Lecture
+import io.gitp.ysfl.client.response.DptGroupResponse
+import io.gitp.ysfl.client.response.DptResponse
+import io.gitp.ysfl.client.response.LectureResponse
 import io.gitp.ysfl.db.CrawlJob
 import io.gitp.ysfl.db.DptGroupRequest
 import io.gitp.ysfl.db.DptRequest
@@ -19,9 +17,9 @@ import java.time.Year
 
 
 fun main(args: Array<String>) {
-    val dptClient: YonseiClient<Dpt> = YonseiClients.dptClient
-    val dptGroupClient: YonseiClient<DptGroup> = YonseiClients.dptGroupClient
-    val lectureClient: YonseiClient<Lecture> = YonseiClients.lectureClient
+    val dptClient: YonseiClient<DptResponse> = DptClient()
+    val dptGroupClient: YonseiClient<DptGroupResponse> = DptGroupClient()
+    val lectureClient: YonseiClient<LectureResponse> = LectureClient()
 
     val jsonMapper = Json { ignoreUnknownKeys = true }
 
@@ -38,18 +36,16 @@ fun main(args: Array<String>) {
     val jobId = transaction { CrawlJob.insert {} get CrawlJob.crawlJobId }
 
     // dptGroup
-    val dptGroupRespBody: String = dptGroupClient
-        .request(DptGroupPayloadVo(reqYear, reqSemster).build())
+    val (dptGroupsRawResp, dptGroups) = dptGroupClient
+        .request(DptGroupPayloadVo(reqYear, reqSemster))
         .get()
-        .body()
-    val dptGroups: List<DptGroup> = dptGroupClient.mapRequestBodyToList(dptGroupRespBody)
 
     transaction {
         DptGroupRequest.insert {
             it[crawlJobId] = jobId
             it[year] = reqYear.value
             it[semester] = reqSemster.name
-            it[httpRespBody] = dptGroupRespBody
+            it[httpRespBody] = dptGroupsRawResp
         }
     }
 
@@ -59,7 +55,7 @@ fun main(args: Array<String>) {
 
     dptGroups
         .map { it.dptGroupId }
-        .map { dptGroupId -> dptClient.request(DptPayloadVo(dptGroupId, reqYear, reqSemster).build()).thenApply { Pair(dptGroupId, it.body()) } }
+        .map { dptGroupId -> dptClient.request(DptPayloadVo(dptGroupId, reqYear, reqSemster)).thenApply { Pair(dptGroupId, it) } }
         .map { it.get() }
         .flatMap { (dptGroupId, dptResp) ->
 
@@ -69,27 +65,11 @@ fun main(args: Array<String>) {
                     it[year] = reqYear.value
                     it[semester] = reqSemster.name
                     it[DptRequest.dptGroupId] = dptGroupId
-                    it[httpRespBody] = dptResp
+                    it[httpRespBody] = dptResp.responseBody
                 }
             }
 
-            val dpts = dptClient.mapRequestBodyToList(dptResp)
-            dptGroupAndDptIdMap[dptGroupId] = dpts.map { it.dptId }
-            dpts
+            dptGroupAndDptIdMap[dptGroupId] = dptResp.dptList.map { it.dptId }
+            dptResp.dptList
         }.onEach { println(it) }
-    //
-    // dptGroupAndDptIdMap
-    //     .entries
-    //     .flatMap { (dptGroupId, dptIds) -> dptIds.map { dptId -> Pair(dptGroupId, dptId) } }
-    //     .map { (dptGroupId, dptId) ->
-    //         lectureClient.request(LecturePayloadVo(year, semester, dptGroupId, dptId).build()).thenApply { Pair(dptId, it.body()) }
-    //     }
-    //     .map { it.get() }
-    //     .flatMap { (dptId, lectureResp) ->
-    //         val lectures = lectureClient.mapRequestBodyToList(lectureResp)
-    //         dptAndLecutreIdMap[dptId] = lectures.map { it.lectureId.toString() }
-    //         lectures
-    //     }.onEach { println(it) }
-
-
 }

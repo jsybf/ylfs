@@ -1,35 +1,21 @@
 package io.gitp.ysfl.client
 
-import io.gitp.ysfl.client.response.DptGroup
-import io.gitp.ysfl.client.response.Dpt
-import io.gitp.ysfl.client.response.Lecture
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.serializer
+import io.gitp.ysfl.client.payload.AbstractPayloadVo
+import io.gitp.ysfl.client.response.DptGroupResponse
+import io.gitp.ysfl.client.response.DptResponse
+import io.gitp.ysfl.client.response.LectureResponse
+import io.gitp.ysfl.client.response.YonseiResponseMarker
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.CompletableFuture
-import kotlin.reflect.KClass
 
-class YonseiClient<T : Any>(
+abstract class YonseiClient<T : YonseiResponseMarker>(
     private val requestUrl: String,
-    private val kclass: KClass<T>,
-    private val postJsonRefiner: ((JsonElement) -> JsonElement)
+    private val mapper: ((HttpResponse<String>) -> T)
 ) {
-    companion object {
-        inline fun <reified V : Any> of(requestUrl: String, noinline postJsonRefiner: ((JsonElement) -> JsonElement)): YonseiClient<V> {
-            return YonseiClient<V>(requestUrl, V::class, postJsonRefiner)
-        }
-    }
-
     private val client: HttpClient = HttpClient.newHttpClient()
-
-    private val json: Json = Json { ignoreUnknownKeys = true }
 
     private fun buildHttpReq(payload: String) = HttpRequest.newBuilder()
         .uri(URI(requestUrl))
@@ -37,58 +23,36 @@ class YonseiClient<T : Any>(
         .POST(HttpRequest.BodyPublishers.ofString(payload))
         .build()
 
-    fun request(payload: String): CompletableFuture<HttpResponse<String>> =
-        client.sendAsync(buildHttpReq(payload), HttpResponse.BodyHandlers.ofString())
+    fun request(payload: AbstractPayloadVo): CompletableFuture<T> =
+        client
+            .sendAsync(buildHttpReq(payload.build()), HttpResponse.BodyHandlers.ofString())
             .thenApply { httpResp ->
-                if(httpResp.statusCode() != 200) {
-                    throw IllegalStateException("""
+                if (httpResp.statusCode() != 200) {
+                    throw IllegalStateException(
+                        """
                         request failed
                         - requestPayload: ${payload} 
                         - response statusCode : ${httpResp.statusCode()} 
-                        - response ${httpResp.toString()}
-                    """.trimIndent())
+                        - response ${httpResp}
+                    """.trimIndent()
+                    )
                 }
                 httpResp
             }
-
-    @OptIn(InternalSerializationApi::class)
-    fun requestAndMap(payload: String): CompletableFuture<List<T>> {
-        return request(payload)
-            .thenApply { httpResp: HttpResponse<String> ->
-                val refinedJson = httpResp.body()
-                    .let { respStr: String -> json.parseToJsonElement(respStr) }
-                    .let { jsonElement: JsonElement -> postJsonRefiner(jsonElement) }
-                json.decodeFromJsonElement(ListSerializer(kclass.serializer()), refinedJson)
-            }
-    }
-
-    @OptIn(InternalSerializationApi::class)
-    fun mapRequestBodyToList(rawResp: String): List<T> =
-        rawResp
-            .let { resp -> json.parseToJsonElement(resp) }
-            .let { jsonElement: JsonElement -> postJsonRefiner(jsonElement) }
-            .let { jsonElement: JsonElement -> json.decodeFromJsonElement(ListSerializer(kclass.serializer()), jsonElement) }
+            .thenApply { mapper(it) }
 }
 
-object YonseiClients {
-    val dptClient = YonseiClient.of<Dpt>(
-        requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
-        postJsonRefiner = { json -> json.jsonObject["dsFaclyCd"] ?: throw IllegalStateException("exception while post json refining") }
-    )
-    val dptGroupClient = YonseiClient.of<DptGroup>(
-        requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
-        postJsonRefiner = { json -> json.jsonObject["dsUnivCd"] ?: throw IllegalStateException("exception while post json refining") }
-    )
-    val lectureClient = YonseiClient.of<Lecture>(
-        "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do",
-        postJsonRefiner = { jsonElement: JsonElement ->
-            jsonElement.jsonObject["dsSles251"] ?: throw IllegalStateException("exception while post json refining")
-        }
-    )
-    val mileageClient= YonseiClient.of<JsonElement>(
-        "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do",
-        postJsonRefiner = { jsonElement: JsonElement ->
-            jsonElement.jsonObject["dsSles440"] ?: throw IllegalStateException("exception while post json refining")
-        }
-    )
-}
+public class DptClient : YonseiClient<DptResponse>(
+    requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
+    mapper = { resp -> DptResponse(resp.body()) }
+)
+
+public class DptGroupClient : YonseiClient<DptGroupResponse>(
+    requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
+    mapper = { resp -> DptGroupResponse(resp.body()) }
+)
+
+public class LectureClient : YonseiClient<LectureResponse>(
+    requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
+    mapper = { resp -> LectureResponse(resp.body()) }
+)
