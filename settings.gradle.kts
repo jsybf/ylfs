@@ -7,4 +7,3 @@ rootProject.name = "ylfs"
 include(":entity-module")
 include(":yonsei-client-module")
 include(":lecture-db-module")
-include(":analyze-data-scripts")
