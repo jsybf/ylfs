@@ -51,7 +51,7 @@ object DptRequest : Table("dpt_request") {
     val semester = varchar("semester", 30)
     val dptGroupId = varchar("dpt_group_id", 30)
 
-    val httpRespBody = text("http_resp_body").nullable()
+    val httpRespBody = mediumText("http_resp_body").nullable()
 
     override val primaryKey = PrimaryKey(dptRequestId)
 }

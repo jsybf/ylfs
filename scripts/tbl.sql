@@ -46,7 +46,7 @@ create table dpt_request
     semester       VARCHAR(30) NOT NULL,
     dpt_group_id   VARCHAR(30) NOT NULL,
 
-    http_resp_body TEXT
+    http_resp_body MEDIUMTEXT
 );
 
 create table lecture_request
@@ -55,9 +55,9 @@ create table lecture_request
     crawl_job_id    INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
 
     year            YEAR        NOT NULL,
-    semseter        VARCHAR(30) NOT NULL,
+    semester        VARCHAR(30) NOT NULL,
     dpt_group_id    VARCHAR(30) NOT NULL,
     dpt_id          VARCHAR(30) NOT NULL,
 
-    http_resp_body  TEXT
+    http_resp_body  MEDIUMTEXT
 );
