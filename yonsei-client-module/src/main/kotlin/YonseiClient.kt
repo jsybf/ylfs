@@ -50,7 +50,7 @@ public class DptGroupClient : YonseiClient<DptGroupResponse>(
 )
 
 public class LectureClient : YonseiClient<LectureResponse>(
-    requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
+    requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do",
     mapper = { resp -> LectureResponse(resp.body()) }
 )
 
