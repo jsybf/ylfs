@@ -1,10 +1,7 @@
 package io.gitp.ysfl.client
 
 import io.gitp.ysfl.client.payload.AbstractPayloadVo
-import io.gitp.ysfl.client.response.DptGroupResponse
-import io.gitp.ysfl.client.response.DptResponse
-import io.gitp.ysfl.client.response.LectureResponse
-import io.gitp.ysfl.client.response.YonseiResponse
+import io.gitp.ysfl.client.response.*
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -55,4 +52,9 @@ public class DptGroupClient : YonseiClient<DptGroupResponse>(
 public class LectureClient : YonseiClient<LectureResponse>(
     requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do",
     mapper = { resp -> LectureResponse(resp.body()) }
+)
+
+public class MileageClient: YonseiClient<MileageResponse>(
+    requestUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do",
+    mapper = { resp -> MileageResponse(resp.body()) }
 )

@@ -1,9 +1,6 @@
 package io.gitp.ysfl.client.response
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 
 private val jsonMapper = Json { ignoreUnknownKeys = true }
 private inline fun <reified T> deserializeResp(respBody: String, postJsonRefiner: (JsonElement) -> JsonElement): List<T> =
@@ -54,10 +51,18 @@ data class LectureResponse(
             LectureResponse(responseBody, deserializeResp<Lecture>(responseBody, postJsonRefiner))
     }
 }
-//     val mileageClient= YonseiClient.of<JsonElement>(
-//         "https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do",
-//         postJsonRefiner = { jsonElement: JsonElement ->
-//             jsonElement.jsonObject["dsSles440"] ?: throw IllegalStateException("exception while post json refining")
-//         }
-//     )
-// }
+
+// TODO
+data class MileageResponse(
+    val responseBody: String,
+    val jsonObject: JsonObject,
+) : YonseiResponse {
+    companion object {
+        private val postJsonRefiner: (JsonElement) -> JsonElement = { json: JsonElement ->
+            json.jsonObject["dsSles440"] ?: throw IllegalStateException("DptResponse returned null body")
+        }
+
+        operator fun invoke(responseBody: String): MileageResponse =
+            MileageResponse(responseBody, jsonMapper.parseToJsonElement(responseBody).jsonObject)
+    }
+}
