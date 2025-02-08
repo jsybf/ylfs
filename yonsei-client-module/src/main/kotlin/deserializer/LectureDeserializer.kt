@@ -14,7 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 internal object LectureDeserializer : KSerializer<Lecture> {
-    private val classroomParser = LectureClassroomParser()
+    private val classroomParser = LectureLocationParser()
     private val scheduleParser = LectureScheduleParser()
 
     override fun deserialize(decoder: Decoder): Lecture {
@@ -30,7 +30,7 @@ internal object LectureDeserializer : KSerializer<Lecture> {
         val name = lectureJson["subjtNm"]!!.jsonPrimitive.content
 
         val schedule = scheduleParser.parseSchedule(lectureJson["lctreTimeNm"]!!.jsonPrimitive.content)        // val subIds = lectureIdStr
-        val classroomList = classroomParser.parseClassroom(lectureJson["lecrmNm"]!!.jsonPrimitive.content)
+        val classroomList = classroomParser.parseLocation(lectureJson["lecrmNm"]!!.jsonPrimitive.content)
 
         val professors = lectureJson["cgprfNm"]!!.jsonPrimitive.toString().split(",")
 

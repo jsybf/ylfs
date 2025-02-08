@@ -9,7 +9,7 @@ data class Lecture(
     val dptId: String,
     val name: String,
 
-    val classrooms: List<ClassroomUnion>,
+    val classrooms: List<LocationUnion>,
     val schedules: Map<Char, List<Int>>,
 
     val professors: List<String>,
@@ -21,14 +21,14 @@ data class LectureId(
     val subId: String
 )
 
-sealed interface ClassroomUnion {
-    data class RealTimeOnline(val dumpy: Nothing? = null) : ClassroomUnion
-    data class Online(val duplicateCapability: Boolean) : ClassroomUnion
+sealed interface LocationUnion {
+    data class RealTimeOnline(val dumpy: Nothing? = null) : LocationUnion
+    data class Online(val duplicateCapability: Boolean) : LocationUnion
 
     data class OffLine(
         val building: String,
         val address: String?
-    ) : ClassroomUnion {
+    ) : LocationUnion {
 
         companion object {
             // order matters
