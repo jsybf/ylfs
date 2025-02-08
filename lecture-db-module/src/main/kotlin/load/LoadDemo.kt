@@ -3,12 +3,15 @@ package io.gitp.ysfl.db.load
 import io.gitp.ysfl.client.*
 import io.gitp.ysfl.client.payload.DptGroupPayloadVo
 import io.gitp.ysfl.client.payload.DptPayloadVo
+import io.gitp.ysfl.client.payload.LecturePayloadVo
 import io.gitp.ysfl.client.response.DptGroupResponse
 import io.gitp.ysfl.client.response.DptResponse
+import io.gitp.ysfl.client.response.LectureId
 import io.gitp.ysfl.client.response.LectureResponse
 import io.gitp.ysfl.db.CrawlJob
 import io.gitp.ysfl.db.DptGroupRequest
 import io.gitp.ysfl.db.DptRequest
+import io.gitp.ysfl.db.LectureRequest
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
@@ -51,7 +54,7 @@ fun main(args: Array<String>) {
 
     // dpt
     val dptGroupAndDptIdMap = mutableMapOf<String, List<String>>()
-    val dptAndLecutreIdMap = mutableMapOf<String, List<String>>()
+    val dptAndLecutreIdMap = mutableMapOf<String, List<LectureId>>()
 
     dptGroups
         .map { it.dptGroupId }
@@ -71,5 +74,39 @@ fun main(args: Array<String>) {
 
             dptGroupAndDptIdMap[dptGroupId] = dptResp.dptList.map { it.dptId }
             dptResp.dptList
+        }
+        .onEach { println(it) }
+
+    // lectures
+    dptGroupAndDptIdMap
+        .flatMap { (dptGroupId, dptIdList) -> dptIdList.map { Pair(dptGroupId, it) } }
+        .map { (dptGroupId, dptId) ->
+            Triple(
+                dptGroupId,
+                dptId,
+                lectureClient.request(LecturePayloadVo(reqYear, reqSemster, dptGroupId, dptId))
+            )
+        }
+        .map {(dptGroupId, dptId, lectureFuture) ->
+            Triple(
+                dptGroupId,
+                dptId,
+                lectureFuture.get()
+            )
+        }
+        .flatMap { (dptGroupId, dptId, lectureResp) ->
+            transaction {
+                LectureRequest.insert {
+                    it[crawlJobId] = jobId
+
+                    it[year] = reqYear.value
+                    it[semester] = reqSemster.name
+                    it[LectureRequest.dptGroupId] = dptGroupId
+                    it[LectureRequest.dptId] = dptId
+                    it[httpRespBody] = lectureResp.responseBody
+                }
+            }
+            dptAndLecutreIdMap[dptId] = lectureResp.lectureList.map { it.lectureId }
+            lectureResp.lectureList
         }.onEach { println(it) }
 }
