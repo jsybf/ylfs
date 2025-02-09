@@ -28,9 +28,15 @@ internal object LectureDeserializer : KSerializer<Lecture> {
         val dptId = lectureJson["estblDeprtCd"]!!.jsonPrimitive.content
         val name = lectureJson["subjtNm"]!!.jsonPrimitive.content
 
-        val schedules = lectureJson["lctreTimeNm"]!!.jsonPrimitive.content
-        val locations = lectureJson["lecrmNm"]!!.jsonPrimitive.content
-        val locationAndSchedule: Map<Schedule, LocationUnion> = LocationScheduleParser.parse(locations, schedules)
+        val schedules: String? = lectureJson["lctreTimeNm"]!!.jsonPrimitive.content.takeIf { it != "null" }
+        val locations: String? = lectureJson["lecrmNm"]!!.jsonPrimitive.content.takeIf { it != "null" }
+        val locationAndSchedule: Map<Schedule, LocationUnion> =
+            if (schedules == null || locations == null) {
+                require(schedules == null && locations == null)
+                emptyMap()
+            } else {
+                LocationScheduleParser.parse(locations, schedules)
+            }
 
         val professors = lectureJson["cgprfNm"]!!.jsonPrimitive.toString().split(",")
 
@@ -45,13 +51,13 @@ internal object LectureDeserializer : KSerializer<Lecture> {
 
     // i don't have any idea
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("io.gitp.LectureIdSerializer") {
-        TODO()
-        // element<Int>("lectureId")
-        // element<Int>("dptId")
-        // element<Int>("name")
-        // element<Int>("classrooms")
-        // element<Int>("schedules")
-        // element<Int>("professors")
+        // TODO()
+        element<Int>("lectureId")
+        element<Int>("dptId")
+        element<Int>("name")
+        element<Int>("classrooms")
+        element<Int>("schedules")
+        element<Int>("professors")
     }
 
     override fun serialize(encoder: Encoder, value: Lecture) = throw NotImplementedError(" serialization is not supported fuck off")
