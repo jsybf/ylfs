@@ -13,7 +13,7 @@ class DptGroupRepository(private val db: Database) {
         DptGroupTbl.insert {
             it[name] = dptGroup.dptGroupName
             it[dptGroupId] = dptGroup.dptGroupId
-            it[DptGroupTbl.semester] = semester.name
+            it[DptGroupTbl.semester] = semester
             it[DptGroupTbl.year] = year
         }
     }
