@@ -21,9 +21,9 @@ internal object LectureDeserializer : KSerializer<Lecture> {
         val lectureJson: JsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
         val lectureId = LectureId(
-            mainId = lectureJson["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
-            classDivisionId = lectureJson["estblDeprtCd"]!!.jsonPrimitive.content,
-            subId = lectureJson["subjtnb"]!!.jsonPrimitive.content
+            mainId = lectureJson["subjtnb"]!!.jsonPrimitive.content,
+            classDivisionId = lectureJson["corseDvclsNo"]!!.jsonPrimitive.content,
+            subId = lectureJson["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
         )
         val dptId = lectureJson["estblDeprtCd"]!!.jsonPrimitive.content
         val name = lectureJson["subjtNm"]!!.jsonPrimitive.content
