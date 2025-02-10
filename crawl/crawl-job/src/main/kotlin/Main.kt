@@ -6,10 +6,11 @@ import java.time.Year
 fun main(argsRaw: Array<String>) {
     val args: Args = parseArgs(argsRaw)
     println(args)
+    crawlJob(args)
 
 }
 
-private data class Args(
+internal data class Args(
     val mysqlUsername: String,
     val mysqlPassword: String,
     val mysqlHost: String,
