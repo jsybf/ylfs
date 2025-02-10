@@ -5,5 +5,5 @@ plugins {
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
-    testImplementation(project(":entity-module"))
+    implementation(project(":entity-module"))
 }
