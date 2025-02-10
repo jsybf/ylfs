@@ -5,3 +5,7 @@
 build
 
 memo/
+
+
+.kotlin/
+.idea/
