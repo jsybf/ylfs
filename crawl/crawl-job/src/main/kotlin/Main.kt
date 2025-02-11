@@ -78,8 +78,8 @@ private fun parseArgs(args: Array<String>): Args {
     /* return Args */
     return Args(
         mysqlUsername = requiredFlags["--m_user"]!!,
-        mysqlPassword = requiredFlags["--m_host"]!!,
-        mysqlHost = requiredFlags["--m_pass"]!!,
+        mysqlPassword = requiredFlags["--m_pass"]!!,
+        mysqlHost = requiredFlags["--m_host"]!!,
         mysqlDatabase = requiredFlags["--m_db"]!!,
 
         year = Year.parse(requiredFlags["--year"]!!),

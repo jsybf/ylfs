@@ -21,9 +21,9 @@ open class YonseiClient<P : AbstractPayload>(
 
     fun request(payload: P): CompletableFuture<Result<String>> =
         client
-            .also { println("request to [${requestUrl}] payload:[${payload}]") }
             .sendAsync(buildHttpReq(payload.build()), HttpResponse.BodyHandlers.ofString())
             .thenApplyAsync { httpResp ->
+                println("requested to [${requestUrl}] payload:[${payload}]")
                 val ifContentTypeJson: Boolean = httpResp.headers().allValues("content-type").any { it.contains("application/json") }
                 if (httpResp.statusCode() == 200 && ifContentTypeJson) Result.success(httpResp.body())
                 else Result.failure(YonseiRequestException(requestUrl, payload, httpResp.body(), httpResp.statusCode()))
