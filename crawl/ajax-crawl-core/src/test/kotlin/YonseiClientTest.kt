@@ -56,21 +56,31 @@ class YonseiClientTest {
     @Tag("do_real_request")
     fun MileageClient_just_execute_test() {
         // when
-        val lecturePayload = LectureId("YCA1003", "01", "00")
-        val result: Result<String> = MileageClient
-            .request(
-                MileagePayload(
-                    lecturePayload,
-                    Year.of(2023),
-                    Semester.FIRST
-                )
+        val coursePayloads = listOf(
+            MileagePayload(
+                LectureId("YCA1003", "01", "00"),
+                Year.of(2023),
+                Semester.FIRST
+            ),
+            MileagePayload(
+                LectureId("ANT3208", "01", "00"),
+                Year.of(2024),
+                Semester.FIRST
+            ),
+            MileagePayload(
+                LectureId("ECO3130", "03", "00"),
+                Year.of(2024),
+                Semester.FIRST
             )
-            .get()
+        )
 
-        // then
-        result.onSuccess { println(it) }
-        assertTrue(result.isSuccess)
+        coursePayloads
+            .map { payload -> MileageClient.request(payload).get() }
+            .onEach {resp -> println("response: ${resp}") }
+            .forEach { resp -> assertTrue(resp.isSuccess) }
+
     }
+
 
     @Test
     @Tag("do_real_request")
