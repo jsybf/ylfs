@@ -15,6 +15,27 @@ dependencies {
 
 }
 
+val mainClassRef = "io.gitp.ylfs.crawl.crawljob.MainKt"
+
 application {
-    mainClass = "io.gitp.ylfs.crawl.crawljob.MainKt"
+    mainClass = mainClassRef
+}
+
+tasks.register<Jar>("fatJar") {
+    group = "custom tasks"
+    description = "Creates a self-contained fat JAR of the application that can be run."
+
+    with(tasks.jar.get())
+
+    manifest.attributes["Main-Class"] = mainClassRef
+    archiveFileName = "${archiveBaseName.get()}-exec.jar"
+    destinationDirectory = file("$rootDir/jars")
+
+    val dependencies = configurations
+        .runtimeClasspath
+        .get()
+        .map(::zipTree)
+    from(dependencies)
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
