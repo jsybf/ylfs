@@ -47,26 +47,43 @@ private data class MileageResponse(
     val response: String
 )
 
-val extractDptGroupId = Regex(""" "deptCd":"(?<dptId>\w+)" """, RegexOption.COMMENTS)
-val extractDptId = Regex(""" "deptCd":"(?<dptId>\d+)" """, RegexOption.COMMENTS)
-val extractCourseId = Regex(""" "subjtnbCorsePrcts":"([\dA-Z]{7})-(\d{2})-(\d{2})" """, RegexOption.COMMENTS)
+private val extractDptGroupId = Regex(""" "deptCd":"(?<dptId>\w+)" """, RegexOption.COMMENTS)
+private val extractDptId = Regex(""" "deptCd":"(?<dptId>\d+)" """, RegexOption.COMMENTS)
+private val extractCourseId = Regex(""" "subjtnbCorsePrcts":"([\dA-Z]{7})-(\d{2})-(\d{2})" """, RegexOption.COMMENTS)
 
 
 /**
  * request to yonsei course search server and
  * persist raw json http response body to mysql
  */
-internal fun crawlJob(arg: Args) {
+internal fun crawlJob(
+    mysqlUsername: String,
+    mysqlPassword: String,
+    mysqlHost: String,
+    mysqlDatabase: String,
+    year: Year,
+    semester: Semester,
+    requestDepth: Int
+) {
+    require(requestDepth in (1..4))
 
-    val repo = RawResponseRepository(arg.mysqlHost, arg.mysqlDatabase, arg.mysqlUsername, arg.mysqlPassword, arg.year, arg.semester)
+    val repo = RawResponseRepository(mysqlHost, mysqlDatabase, mysqlUsername, mysqlPassword, year, semester)
     repo.startJob()
 
     /* request DptGroup */
     val dptGroupResponse: DptGroupResponse = DptGroupClient
-        .request(DptGroupPayload(arg.year, arg.semester))
+        .request(DptGroupPayload(year, semester))
         .get()
         .getOrNull()!!
         .let { DptGroupResponse(it) }
+
+    repo.insertDptGroupResponse(dptGroupResponse)
+
+
+    if (requestDepth == 1) {
+        repo.endJob()
+        return
+    }
 
 
     /* request Dpt */
@@ -81,13 +98,19 @@ internal fun crawlJob(arg: Args) {
     val dptResponses: List<DptResponse> = dptRequestIds
         .map { dptRequestId ->
             DptClient
-                .request(DptPayload(dptRequestId.dptGroupId, arg.year, arg.semester))
+                .request(DptPayload(dptRequestId.dptGroupId, year, semester))
                 .thenApply { responseResult: Result<String> ->
                     DptResponse(dptRequestId, responseResult.getOrNull()!!)
                 }
         }
         .map { it.get() }
 
+    repo.batchInsertDptResponses(dptResponses)
+
+    if (requestDepth == 2) {
+        repo.endJob()
+        return
+    }
 
     /* request Course */
     val courseRequestIds: List<CourseRequestId> = dptResponses
@@ -101,12 +124,19 @@ internal fun crawlJob(arg: Args) {
     val courseResponses: List<CourseResponse> = courseRequestIds
         .map { courseRequestId: CourseRequestId ->
             CourseClient
-                .request(CoursePayload(courseRequestId.dptGroupId, courseRequestId.dptId, arg.year, arg.semester))
+                .request(CoursePayload(courseRequestId.dptGroupId, courseRequestId.dptId, year, semester))
                 .thenApply { responseResult: Result<String> ->
                     CourseResponse(courseRequestId, responseResult.getOrNull()!!)
                 }
         }
         .map { it.get() }
+
+    repo.batchInsertCourseResponses(courseResponses)
+
+    if (requestDepth == 3) {
+        repo.endJob()
+        return
+    }
 
     /* reqeust Mileages */
     val mileageRequestId: List<MileageRequestId> = courseResponses
@@ -132,7 +162,7 @@ internal fun crawlJob(arg: Args) {
     val mileageResponses: List<MileageResponse> = mileageRequestId
         .map { mileageRequestId ->
             MileageClient
-                .request(MileagePayload(mileageRequestId.courseId, arg.year, arg.semester))
+                .request(MileagePayload(mileageRequestId.courseId, year, semester))
                 .thenApplyAsync { responseResult: Result<String> ->
                     val resp = MileageResponse(mileageRequestId, responseResult.getOrNull()!!)
                     repo.batchInsertMileageResponse(listOf(resp))
@@ -150,12 +180,14 @@ internal fun crawlJob(arg: Args) {
         .map { it.get() }
         .toList()
 
-    repo.insertDptGroupResponse(dptGroupResponse)
-    repo.batchInsertDptResponses(dptResponses)
-    repo.batchInsertCourseResponses(courseResponses)
     repo.batchInsertMileageResponse(mileageResponses)
 
-    repo.endJob()
+    if (requestDepth == 4) {
+        repo.endJob()
+        return
+    }
+
+    error("request Depth should be 1~4")
 }
 
 private class RawResponseRepository(

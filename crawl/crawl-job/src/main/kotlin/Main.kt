@@ -1,89 +1,70 @@
 package io.gitp.ylfs.crawl.crawljob
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.main
+import com.github.ajalt.clikt.output.MordantHelpFormatter
+import com.github.ajalt.clikt.parameters.options.convert
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.required
+import com.github.ajalt.clikt.parameters.types.int
 import io.gitp.ylfs.entity.type.Semester
 import java.time.Year
 
-fun main(argsRaw: Array<String>) {
-    val args: Args = parseArgs(argsRaw)
-    println(args)
-    crawlJob(args)
+class CrawlJobCommand() : CliktCommand() {
 
-}
-
-internal data class Args(
-    val mysqlUsername: String,
-    val mysqlPassword: String,
-    val mysqlHost: String,
-    val mysqlDatabase: String,
-
-    val year: Year,
-    val semester: Semester,
-
-    val ifShowCredentialInLog: Boolean,
-)
-
-private fun parseArgs(args: Array<String>): Args {
-    val usage = """
-        
-    (required fields)
-    --m_user          : mysql user name
-    --m_pass          : mysql user password
-    --m_host          : mysql host
-    --m_db            : mysql database
-    --year            : year
-    --semester        : semester ("FIRST" or "SECOND")
-    
-    
-    (optional fields)
-    --if_show_cred    : if show mysql credential in stdout log ("y" or "n")
-    
-    (example)
-    --m_user root --m_host 43.202.5.149 --m_pass root_pass  --m_db crawl --year 2025 --semester FIRST    
-    
+    val requestDepthHelp = """
+        set request target data. ${"\u0085"}
+        1: DptGroup 2: Dpt 3: Course 4: Mileage ${"\u0085"}
+        see help text for more info. ${"\u0085"}
     """.trimIndent()
-    val optionalFlag = arrayOf("--show_cred")
 
-    val requiredFlags: MutableMap<String, String?> = mutableMapOf(
-        "--m_user" to null,
-        "--m_host" to null,
-        "--m_pass" to null,
-        "--m_db" to null,
+    val mysqlUsername by option("--m_user", help = "mysql username").required()
+    val mysqlPassword by option("--m_pass", help = "mysql user password").required()
+    val mysqlHost by option("--m_host", help = "mysql host").required()
+    val mysqlDatabase by option("--m_db", help = "mysql database name").required()
+    val requestYear by option("--year", help = "year to request. ex: 2023").convert { Year.parse(it) }.required()
+    val requestSemester by option("--semester", help = "semesterto request.'FIRST', 'SECOND' available").convert { Semester.valueOf(it) }.required()
+    val requestDepth by option("--depth", help = requestDepthHelp).int().required()
 
-        "--year" to null,
-        "--semester" to null
-    )
 
-    val optionalFlags: MutableMap<String, String?> = mutableMapOf(
-        "--if_show_cred" to null
-    )
-
-    /* parse args */
-    for (i in (args.indices step 2)) {
-        val flag = args[i]
-        val value = args[i + 1]
-
-        if (requiredFlags.containsKey(flag)) {
-            if (requiredFlags[flag] != null) error("flag(${flag}) duplicated\n" + usage)
-            requiredFlags[flag] = value
-        } else if (optionalFlags.containsKey(flag)) {
-            if (requiredFlags[flag] != null) error("flag(${flag}) duplicated\n" + usage)
-            optionalFlags[flag] = value
-        } else error("flag named [${flag}] not expected\n" + usage)
+    init {
+        context {
+            helpFormatter = { MordantHelpFormatter(it, showRequiredTag = true) }
+        }
     }
 
-    optionalFlags["--if_show_cred"]
-        ?.let { require(it in arrayOf("y", "n")) { """ --if_show_cred only accepts "y" or "n" """ + "\n" + usage } }
+
+    override fun help(context: Context): String = """
+    request data to yonsei lecture finding server.
+    
+    this cli can crawl the following data ${"\u0085"}
+        - department group ${"\u0085"}
+        - department ${"\u0085"}
+        - course ${"\u0085"}
+        - mileage ${"\u0085"}
+    these data are hierarchical, where each of them depends on upper one.
+    --depth option specifies request data target respecting this hierarchy.
+    
+    (example)${"\u0085"}
+    `--depth 3` means request course data. then program sequentially requests deptartment group ->
+    department -> course to get course data.
+    """.trimIndent()
 
 
-    /* return Args */
-    return Args(
-        mysqlUsername = requiredFlags["--m_user"]!!,
-        mysqlPassword = requiredFlags["--m_pass"]!!,
-        mysqlHost = requiredFlags["--m_host"]!!,
-        mysqlDatabase = requiredFlags["--m_db"]!!,
+    override fun run() {
+        crawlJob(
+            mysqlUsername,
+            mysqlPassword,
+            mysqlHost,
+            mysqlDatabase,
+            requestYear,
+            requestSemester,
+            requestDepth
+        )
+    }
 
-        year = Year.parse(requiredFlags["--year"]!!),
-        semester = Semester.valueOf(requiredFlags["--semester"]!!),
-        ifShowCredentialInLog = optionalFlags["--if_show_cred"] == "y"
-    )
 }
+
+fun main(args: Array<String>) = CrawlJobCommand().main(args)
