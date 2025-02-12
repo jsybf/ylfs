@@ -1,15 +1,19 @@
 package io.gitp.ylfs.crawl.crawljob
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.options.convert
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
 import io.gitp.ylfs.entity.type.Semester
+import org.slf4j.LoggerFactory
 import java.time.Year
 
 class CrawlJobCommand() : CliktCommand() {
@@ -26,6 +30,8 @@ class CrawlJobCommand() : CliktCommand() {
     val mysqlDatabase by option("--m_db", help = "mysql database name").required()
     val requestYear by option("--year", help = "year to request. ex: 2023").convert { Year.parse(it) }.required()
     val requestSemester by option("--semester", help = "semesterto request.'FIRST', 'SECOND' available").convert { Semester.valueOf(it) }.required()
+    val logLevel by option("--log_level", help = "'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'OFF' avaiable. default: 'DEBUG'")
+        .convert { Level.toLevel(it) }.default(Level.DEBUG)
     val requestDepth by option("--depth", help = requestDepthHelp).int().required()
 
 
@@ -54,6 +60,9 @@ class CrawlJobCommand() : CliktCommand() {
 
 
     override fun run() {
+        // set logging level
+        val logger = LoggerFactory.getLogger(ROOT_LOGGER_NAME) as (ch.qos.logback.classic.Logger)
+        logger.level = logLevel
         crawlJob(
             mysqlUsername,
             mysqlPassword,

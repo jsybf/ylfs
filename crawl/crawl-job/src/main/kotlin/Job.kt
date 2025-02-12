@@ -10,6 +10,8 @@ import io.gitp.ylfs.crawl.payload.DptPayload
 import io.gitp.ylfs.crawl.payload.MileagePayload
 import io.gitp.ylfs.entity.type.LectureId
 import io.gitp.ylfs.entity.type.Semester
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.StringReader
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -51,6 +53,7 @@ private val extractDptGroupId = Regex(""" "deptCd":"(?<dptId>\w+)" """, RegexOpt
 private val extractDptId = Regex(""" "deptCd":"(?<dptId>\d+)" """, RegexOption.COMMENTS)
 private val extractCourseId = Regex(""" "subjtnbCorsePrcts":"([\dA-Z]{7})-(\d{2})-(\d{2})" """, RegexOption.COMMENTS)
 
+private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.name)
 
 /**
  * request to yonsei course search server and
@@ -71,12 +74,14 @@ internal fun crawlJob(
     repo.startJob()
 
     /* request DptGroup */
+    logger.info("requesting department group data")
     val dptGroupResponse: DptGroupResponse = DptGroupClient
         .request(DptGroupPayload(year, semester))
         .get()
         .getOrNull()!!
         .let { DptGroupResponse(it) }
 
+    logger.info("inserting department group response to db.")
     repo.insertDptGroupResponse(dptGroupResponse)
 
 
@@ -95,6 +100,7 @@ internal fun crawlJob(
             }
             .toList()
 
+    logger.info("requesting department data")
     val dptResponses: List<DptResponse> = dptRequestIds
         .map { dptRequestId ->
             DptClient
@@ -105,6 +111,7 @@ internal fun crawlJob(
         }
         .map { it.get() }
 
+    logger.info("inserting department response to db.")
     repo.batchInsertDptResponses(dptResponses)
 
     if (requestDepth == 2) {
@@ -121,6 +128,7 @@ internal fun crawlJob(
         }
 
 
+    logger.info("requesting course data")
     val courseResponses: List<CourseResponse> = courseRequestIds
         .map { courseRequestId: CourseRequestId ->
             CourseClient
@@ -131,6 +139,7 @@ internal fun crawlJob(
         }
         .map { it.get() }
 
+    logger.info("inserting course response to db.")
     repo.batchInsertCourseResponses(courseResponses)
 
     if (requestDepth == 3) {
@@ -139,7 +148,7 @@ internal fun crawlJob(
     }
 
     /* reqeust Mileages */
-    val mileageRequestId: List<MileageRequestId> = courseResponses
+    val mileageRequestIds: List<MileageRequestId> = courseResponses
         .flatMap { (courseRequestId, response) ->
             extractCourseId
                 .findAll(response)
@@ -153,34 +162,35 @@ internal fun crawlJob(
                 }
         }
 
-
-    val totalMileageRequest = mileageRequestId.size
+    val totalMileageRequest = mileageRequestIds.size
     var mileageRequestCount = AtomicInteger()
+    val chunkSize = 64
     val startTime = LocalDateTime.now()
     fun duration() = Duration.between(startTime, LocalDateTime.now())
 
-    val mileageResponses: List<MileageResponse> = mileageRequestId
-        .map { mileageRequestId ->
-            MileageClient
-                .request(MileagePayload(mileageRequestId.courseId, year, semester))
-                .thenApplyAsync { responseResult: Result<String> ->
-                    val resp = MileageResponse(mileageRequestId, responseResult.getOrNull()!!)
-                    repo.batchInsertMileageResponse(listOf(resp))
-                    resp
-                }
-                .handle { result, e ->
-                    println(
-                        "[${mileageRequestCount.incrementAndGet()}/${totalMileageRequest}] [${duration().toSeconds()}s]"
-                                + "[mainId: ${result.requestId.courseId.mainId} subId: ${result.requestId.courseId.classDivisionId}]"
-                    )
-                    if (e != null) throw (e)
-                    result
-                }
+    logger.info("requesting mileage data and inserting mileage data chunk")
+    val mileageResponses: List<MileageResponse> = mileageRequestIds
+        .chunked(chunkSize)
+        .map { requestIds ->
+            requestIds.map { requestId ->
+                MileageClient
+                    .request(MileagePayload(requestId.courseId, year, semester))
+                    .thenApplyAsync { responseResult: Result<String> ->
+                        MileageResponse(requestId, responseResult.getOrNull()!!)
+                    }
+            }
         }
-        .map { it.get() }
-        .toList()
+        .map { respFutures ->
+            val resps = respFutures.map { it.get() }
+            logger.debug(
+                "inserting mileage data chunk progress: [{}/{}] duration: [{}s]",
+                mileageRequestCount.addAndGet(resps.size), totalMileageRequest, duration().toSeconds()
+            )
+            repo.batchInsertMileageResponse(resps)
+            resps
 
-    repo.batchInsertMileageResponse(mileageResponses)
+        }
+        .flatten()
 
     if (requestDepth == 4) {
         repo.endJob()
@@ -199,10 +209,11 @@ private class RawResponseRepository(
     val year: Year,
     val semester: Semester
 ) {
+    val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     private val conn = run {
         val jdbcUrl = "jdbc:mysql://$mysqlHost/$mysqlDatabase"
-        println("connecting to mysql jdbcUrl=[${jdbcUrl}] user=[$mysqlUser] password=[$mysqlPassword]")
+        logger.info("connecting to mysql jdbcUrl=[${jdbcUrl}] user=[$mysqlUser] password=[$mysqlPassword]")
         DriverManager.getConnection(jdbcUrl, mysqlUser, mysqlPassword)
     }
     private var jobId: Int? = null
@@ -259,7 +270,7 @@ private class RawResponseRepository(
         val jobId = stmt.generatedKeys.also { require(it.next()) }.getInt(1)
         this.jobId = jobId!!
 
-        println("started crawl job")
+        logger.info("started crawl job")
     }
 
 
@@ -270,7 +281,7 @@ private class RawResponseRepository(
         this.jobId = null
         this.conn.close()
 
-        println("crawl job end. close jdbc connection")
+        logger.info("crawl job end. closed jdbc connection")
     }
 
     fun insertDptGroupResponse(dptGroupResp: DptGroupResponse): List<Int> = dptGroupReqInsertStmt().use { stmt ->
@@ -314,7 +325,6 @@ private class RawResponseRepository(
     }
 
     fun batchInsertMileageResponse(mileageResponses: List<MileageResponse>): List<Int> = mileageReqInsertStmt().use { stmt ->
-        println("batchInsertMileageRequest is called")
         requireNotNull(this.jobId)
 
         mileageResponses.onEach { (requestId, response) ->

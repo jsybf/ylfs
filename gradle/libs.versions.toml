@@ -7,6 +7,10 @@ kotlin_version = "2.1.10"
 exposed_version = "0.59.0"
 
 [libraries]
+logging-logback = { group = "ch.qos.logback", name = "logback-classic", version = "1.5.16" }
+logging-slf4j = { group = "org.slf4j", name = "slf4j-api", version = "2.0.16" }
+
+
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.8.0" }
 
 mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version = "8.0.33" }

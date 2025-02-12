@@ -1,6 +1,7 @@
 package io.gitp.ylfs.crawl.client
 
 import io.gitp.ylfs.crawl.payload.AbstractPayload
+import org.slf4j.LoggerFactory
 
 import java.net.URI
 import java.net.http.HttpClient
@@ -11,6 +12,7 @@ import java.util.concurrent.CompletableFuture
 open class YonseiClient<P : AbstractPayload>(
     private val requestUrl: String,
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private val client: HttpClient = HttpClient.newHttpClient()
 
     private fun buildHttpReq(payload: String) = HttpRequest.newBuilder()
@@ -23,10 +25,14 @@ open class YonseiClient<P : AbstractPayload>(
         client
             .sendAsync(buildHttpReq(payload.build()), HttpResponse.BodyHandlers.ofString())
             .thenApplyAsync { httpResp ->
-                // println("requested to [${requestUrl}] payload:[${payload}]")
+                logger.trace("requested to [{}] payload:[{}]", requestUrl, payload)
                 val ifContentTypeJson: Boolean = httpResp.headers().allValues("content-type").any { it.contains("application/json") }
                 if (httpResp.statusCode() == 200 && ifContentTypeJson) Result.success(httpResp.body())
-                else Result.failure(YonseiRequestException(requestUrl, payload, httpResp.body(), httpResp.statusCode()))
+                else {
+                    val requestException = YonseiRequestException(requestUrl, payload, httpResp.body(), httpResp.statusCode())
+                    logger.error("exception while requesting {}", requestException)
+                    Result.failure(requestException)
+                }
             }
 }
 
