@@ -3,7 +3,7 @@ import io.gitp.ylfs.crawl.payload.CoursePayload
 import io.gitp.ylfs.crawl.payload.DptGroupPayload
 import io.gitp.ylfs.crawl.payload.DptPayload
 import io.gitp.ylfs.crawl.payload.MileagePayload
-import io.gitp.ylfs.entity.type.LectureId
+import io.gitp.ylfs.entity.type.CourseId
 import io.gitp.ylfs.entity.type.Semester
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -58,17 +58,17 @@ class YonseiClientTest {
         // when
         val coursePayloads = listOf(
             MileagePayload(
-                LectureId("YCA1003", "01", "00"),
+                CourseId("YCA1003", "01", "00"),
                 Year.of(2023),
                 Semester.FIRST
             ),
             MileagePayload(
-                LectureId("ANT3208", "01", "00"),
+                CourseId("ANT3208", "01", "00"),
                 Year.of(2024),
                 Semester.FIRST
             ),
             MileagePayload(
-                LectureId("ECO3130", "03", "00"),
+                CourseId("ECO3130", "03", "00"),
                 Year.of(2024),
                 Semester.FIRST
             )

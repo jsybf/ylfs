@@ -1,11 +1,11 @@
 package io.gitp.ylfs.crawl.payload
 
-import io.gitp.ylfs.entity.type.LectureId
+import io.gitp.ylfs.entity.type.CourseId
 import io.gitp.ylfs.entity.type.Semester
 import java.time.Year
 
 data class MileagePayload(
-    val lectureId: LectureId,
+    val courseId: CourseId,
     val year: Year,
     val semester: Semester,
 ) : AbstractPayload() {
@@ -21,9 +21,9 @@ data class MileagePayload(
 
         payloadMap["%40d1%23syy"] = year.toString()
         payloadMap["%40d1%23smtDivCd"] = semester.code.toString()
-        payloadMap["%40d1%23subjtnb"] = lectureId.mainId
-        payloadMap["%40d1%23corseDvclsNo"] = lectureId.classDivisionId
-        payloadMap["%40d1%23prctsCorseDvclsNo"] = lectureId.subId
+        payloadMap["%40d1%23subjtnb"] = courseId.mainId
+        payloadMap["%40d1%23corseDvclsNo"] = courseId.classId
+        payloadMap["%40d1%23prctsCorseDvclsNo"] = courseId.subId
 
         return payloadMap
     }

@@ -8,7 +8,7 @@ import io.gitp.ylfs.crawl.payload.CoursePayload
 import io.gitp.ylfs.crawl.payload.DptGroupPayload
 import io.gitp.ylfs.crawl.payload.DptPayload
 import io.gitp.ylfs.crawl.payload.MileagePayload
-import io.gitp.ylfs.entity.type.LectureId
+import io.gitp.ylfs.entity.type.CourseId
 import io.gitp.ylfs.entity.type.Semester
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,7 +27,7 @@ private data class DptRequestId(val dptGroupId: String)
 
 private data class CourseRequestId(val dptGroupId: String, val dptId: String)
 
-private data class MileageRequestId(val courseId: LectureId)
+private data class MileageRequestId(val courseId: CourseId)
 
 
 private data class DptGroupResponse(
@@ -153,9 +153,9 @@ internal fun crawlJob(
             extractCourseId
                 .findAll(response)
                 .map { matchResult: MatchResult ->
-                    val courseId = LectureId(
+                    val courseId = CourseId(
                         mainId = matchResult.destructured.component1(),
-                        classDivisionId = matchResult.destructured.component2(),
+                        classId = matchResult.destructured.component2(),
                         subId = matchResult.destructured.component3()
                     )
                     MileageRequestId(courseId)
@@ -329,7 +329,7 @@ private class RawResponseRepository(
 
         mileageResponses.onEach { (requestId, response) ->
             stmt.setString(1, requestId.courseId.mainId)
-            stmt.setString(2, requestId.courseId.classDivisionId)
+            stmt.setString(2, requestId.courseId.classId)
             stmt.setString(3, requestId.courseId.subId)
             stmt.setCharacterStream(4, StringReader(response))
             stmt.addBatch()
