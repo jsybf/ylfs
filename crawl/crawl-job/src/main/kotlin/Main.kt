@@ -1,7 +1,6 @@
 package io.gitp.ylfs.crawl.crawljob
 
 import ch.qos.logback.classic.Level
-import ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.context
@@ -16,31 +15,12 @@ import io.gitp.ylfs.entity.type.Semester
 import org.slf4j.LoggerFactory
 import java.time.Year
 
-class CrawlJobCommand() : CliktCommand() {
-
-    val requestDepthHelp = """
-        set request target data. ${"\u0085"}
-        1: DptGroup 2: Dpt 3: Course 4: Mileage ${"\u0085"}
-        see help text for more info. ${"\u0085"}
-    """.trimIndent()
-
-    val mysqlUsername by option("--m_user", help = "mysql username").required()
-    val mysqlPassword by option("--m_pass", help = "mysql user password").required()
-    val mysqlHost by option("--m_host", help = "mysql host").required()
-    val mysqlDatabase by option("--m_db", help = "mysql database name").required()
-    val requestYear by option("--year", help = "year to request. ex: 2023").convert { Year.parse(it) }.required()
-    val requestSemester by option("--semester", help = "semesterto request.'FIRST', 'SECOND' available").convert { Semester.valueOf(it) }.required()
-    val logLevel by option("--log_level", help = "'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'OFF' avaiable. default: 'DEBUG'")
-        .convert { Level.toLevel(it) }.default(Level.DEBUG)
-    val requestDepth by option("--depth", help = requestDepthHelp).int().required()
-
-
+private class CrawlJobCommand : CliktCommand() {
     init {
         context {
             helpFormatter = { MordantHelpFormatter(it, showRequiredTag = true) }
         }
     }
-
 
     override fun help(context: Context): String = """
     request data to yonsei lecture finding server.
@@ -58,23 +38,52 @@ class CrawlJobCommand() : CliktCommand() {
     department -> course to get course data.
     """.trimIndent()
 
+    private val requestDepthHelp = """
+        set request target data. ${"\u0085"}
+        1: DptGroup 2: Dpt 3: Course 4: Mileage ${"\u0085"}
+        see help text for more info. ${"\u0085"}
+    """.trimIndent()
+
+    private val mysqlUsername by option("--m_user", help = "mysql username").required()
+    private val mysqlPassword by option("--m_pass", help = "mysql user password").required()
+    private val mysqlHost by option("--m_host", help = "mysql host").required()
+    private val mysqlDatabase by option("--m_db", help = "mysql database name").required()
+    private val requestYear by option("--year", help = "year to request. ex: 2023").convert { Year.parse(it) }.required()
+    private val requestSemester by option("--semester", help = "semesterto request.'FIRST', 'SECOND' available").convert { Semester.valueOf(it) }
+        .required()
+    private val logLevel by option("--log_level", help = "'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'OFF' avaiable. default: 'DEBUG'")
+        .convert { Level.toLevel(it) }.default(Level.DEBUG)
+    private val requestDepth by option("--depth", help = requestDepthHelp).int().required()
 
     override fun run() {
+        LoggerFactory.getLogger("com.zaxxer.hikari").apply {
+            val logger = this as (ch.qos.logback.classic.Logger)
+            logger.level = Level.INFO
+        }
         // set logging level
-        val logger = LoggerFactory.getLogger(ROOT_LOGGER_NAME) as (ch.qos.logback.classic.Logger)
+        val logger = LoggerFactory.getLogger("io.gitp.ylfs") as (ch.qos.logback.classic.Logger)
         logger.level = logLevel
 
-        crawlJob(
-            mysqlUsername,
-            mysqlPassword,
+        val crawlJobRepo = CrawlJobRepository(
             mysqlHost,
             mysqlDatabase,
+            mysqlUsername,
+            mysqlPassword,
+            requestYear,
+            requestSemester
+        )
+        val crawlJob = CrawlJob(
+            crawlJobRepo,
             requestYear,
             requestSemester,
-            requestDepth
+            requestDepth,
+            64
         )
 
+        crawlJob.execute()
+
     }
+
 
 }
 

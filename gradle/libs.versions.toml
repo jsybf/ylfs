@@ -18,9 +18,10 @@ exposed-core = { group = "org.jetbrains.exposed", name = "exposed-core", version
 exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed_version" }
 exposed-java-time = { group = "org.jetbrains.exposed", name = "exposed-java-time", version.ref = "exposed_version" }
 
+hikari-cp = { group = "com.zaxxer", name = "HikariCP", version = "6.2.1" }
+
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version = "5.0.3" }
 
-#duckdb-jdbc = { group = "org.duckdb", name = "duckdb_jdbc", version = "1.1.3" }
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin_version" }

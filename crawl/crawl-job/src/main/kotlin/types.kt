@@ -6,7 +6,7 @@ internal data class DptReqId(val collegeId: String)
 
 internal data class LectureReqId(val collegeId: String, val dptId: String)
 
-internal data class MlgRankReqId(val lectureId: LectureId)
+internal data class MlgReqId(val lectureId: LectureId)
 
 
 internal data class CollegeResp(
@@ -24,6 +24,11 @@ internal data class LectureResp(
 )
 
 internal data class MlgRankResp(
-    val reqId: MlgRankReqId,
+    val reqId: MlgReqId,
+    val resp: String
+)
+
+internal data class MlgInfoResp(
+    val reqId: MlgReqId,
     val resp: String
 )

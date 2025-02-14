@@ -1,9 +1,6 @@
 package io.gitp.ylfs.crawl.client
 
-import io.gitp.ylfs.crawl.payload.CollegePayload
-import io.gitp.ylfs.crawl.payload.DptPayload
-import io.gitp.ylfs.crawl.payload.LecturePayload
-import io.gitp.ylfs.crawl.payload.MlgRankPayload
+import io.gitp.ylfs.crawl.payload.*
 
 
 object CollegeClient :
@@ -17,3 +14,6 @@ object LectureClient :
 
 object MlgRankClient :
     YonseiClient<MlgRankPayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do")
+
+object MlgInfoClient :
+    YonseiClient<MlgInfoPayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgAppcsResltList.do")

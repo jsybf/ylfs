@@ -1,8 +1,5 @@
 import io.gitp.ylfs.crawl.client.*
-import io.gitp.ylfs.crawl.payload.CollegePayload
-import io.gitp.ylfs.crawl.payload.DptPayload
-import io.gitp.ylfs.crawl.payload.LecturePayload
-import io.gitp.ylfs.crawl.payload.MlgRankPayload
+import io.gitp.ylfs.crawl.payload.*
 import io.gitp.ylfs.entity.type.LectureId
 import io.gitp.ylfs.entity.type.Semester
 import org.junit.jupiter.api.Tag
@@ -81,6 +78,34 @@ class YonseiClientTest {
 
     }
 
+    @Test
+    @Tag("do_real_request")
+    fun just_execute_test_MlgInfoClient() {
+        // when
+        val payloads = listOf(
+            MlgInfoPayload(
+                LectureId("YCA1003", "01", "00"),
+                Year.of(2023),
+                Semester.FIRST
+            ),
+            MlgInfoPayload(
+                LectureId("ANT3208", "01", "00"),
+                Year.of(2024),
+                Semester.FIRST
+            ),
+            MlgInfoPayload(
+                LectureId("ECO3130", "03", "00"),
+                Year.of(2024),
+                Semester.FIRST
+            )
+        )
+
+        payloads
+            .map { payload -> MlgInfoClient.request(payload).get() }
+            .onEach { resp -> println("response: ${resp}") }
+            .forEach { resp -> assertTrue(resp.isSuccess) }
+
+    }
 
     @Test
     @Tag("do_real_request")
