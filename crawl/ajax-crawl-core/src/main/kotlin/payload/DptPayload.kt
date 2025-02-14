@@ -4,14 +4,14 @@ import io.gitp.ylfs.entity.type.Semester
 import java.time.Year
 
 data class DptPayload(
-    val dptGroupId: String,
+    val collegeId: String,
     val year: Year,
     val semester: Semester
 ) : AbstractPayload() {
 
     init {
         // 신촌캠(본캠) 학과들은 dptGroupId가 s로 시작함
-        require(dptGroupId.startsWith("s"))
+        require(collegeId.startsWith("s"))
     }
 
     override val defaultPayload: Map<String, String> = mapOf(
@@ -27,7 +27,7 @@ data class DptPayload(
     override fun getPayloadMap(): Map<String, String> {
         val payLoadMap: MutableMap<String, String> = mutableMapOf()
 
-        payLoadMap["%40d1%23lv2"] = dptGroupId
+        payLoadMap["%40d1%23lv2"] = collegeId
         payLoadMap["%40d1%23syy"] = year.toString()
         payLoadMap["%40d1%23smtDivCd"] = semester.code.toString()
 

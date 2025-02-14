@@ -1,19 +1,19 @@
 package io.gitp.ylfs.crawl.client
 
-import io.gitp.ylfs.crawl.payload.CoursePayload
-import io.gitp.ylfs.crawl.payload.DptGroupPayload
+import io.gitp.ylfs.crawl.payload.CollegePayload
 import io.gitp.ylfs.crawl.payload.DptPayload
-import io.gitp.ylfs.crawl.payload.MileagePayload
+import io.gitp.ylfs.crawl.payload.LecturePayload
+import io.gitp.ylfs.crawl.payload.MlgRankPayload
 
 
-object DptGroupClient :
-    YonseiClient<DptGroupPayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do")
+object CollegeClient :
+    YonseiClient<CollegePayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do")
 
 object DptClient :
     YonseiClient<DptPayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbList.do")
 
-object CourseClient :
-    YonseiClient<CoursePayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do")
+object LectureClient :
+    YonseiClient<LecturePayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findAtnlcHandbList.do")
 
-object MileageClient :
-    YonseiClient<MileagePayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do")
+object MlgRankClient :
+    YonseiClient<MlgRankPayload>("https://underwood1.yonsei.ac.kr/sch/sles/SlessyCtr/findMlgRankResltList.do")

@@ -3,8 +3,8 @@ package io.gitp.ylfs.crawl.payload
 import io.gitp.ylfs.entity.type.Semester
 import java.time.Year
 
-data class CoursePayload(
-    val dptGroupId: String,
+data class LecturePayload(
+    val collegeId: String,
     val dptId: String,
     val year: Year,
     val semester: Semester
@@ -30,7 +30,7 @@ data class CoursePayload(
 
         payloadMap["%40d1%23syy"] = year.toString()
         payloadMap["%40d1%23smtDivCd"] = semester.code.toString()
-        payloadMap["%40d1%23univCd"] = dptGroupId
+        payloadMap["%40d1%23univCd"] = collegeId
         payloadMap["%40d1%23faclyCd"] = dptId
 
         return payloadMap

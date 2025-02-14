@@ -1,9 +1,9 @@
 import io.gitp.ylfs.crawl.client.*
-import io.gitp.ylfs.crawl.payload.CoursePayload
-import io.gitp.ylfs.crawl.payload.DptGroupPayload
+import io.gitp.ylfs.crawl.payload.CollegePayload
 import io.gitp.ylfs.crawl.payload.DptPayload
-import io.gitp.ylfs.crawl.payload.MileagePayload
-import io.gitp.ylfs.entity.type.CourseId
+import io.gitp.ylfs.crawl.payload.LecturePayload
+import io.gitp.ylfs.crawl.payload.MlgRankPayload
+import io.gitp.ylfs.entity.type.LectureId
 import io.gitp.ylfs.entity.type.Semester
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -15,10 +15,10 @@ import kotlin.test.assertTrue
 class YonseiClientTest {
     @Test
     @Tag("do_real_request")
-    fun DptGroupClient_just_execute_test() {
+    fun just_execute_CollegeClient() {
         // when
-        val result: Result<String> = DptGroupClient
-            .request(DptGroupPayload(Year.of(2025), Semester.FIRST))
+        val result: Result<String> = CollegeClient
+            .request(CollegePayload(Year.of(2025), Semester.FIRST))
             .get()
 
         // then
@@ -28,7 +28,7 @@ class YonseiClientTest {
 
     @Test
     @Tag("do_real_request")
-    fun DptClient_just_execute_test() {
+    fun just_execute_DptClient() {
         // when
         val result: Result<String> = DptClient
             .request(DptPayload("s11000", Year.of(2025), Semester.FIRST))
@@ -41,10 +41,10 @@ class YonseiClientTest {
 
     @Test
     @Tag("do_real_request")
-    fun CourseClient_just_execute_test() {
+    fun just_execute_test_LectureClient() {
         // when
-        val result: Result<String> = CourseClient
-            .request(CoursePayload("s11000", "30105", Year.of(2025), Semester.FIRST))
+        val result: Result<String> = LectureClient
+            .request(LecturePayload("s11000", "30105", Year.of(2025), Semester.FIRST))
             .get()
 
         // then
@@ -54,29 +54,29 @@ class YonseiClientTest {
 
     @Test
     @Tag("do_real_request")
-    fun MileageClient_just_execute_test() {
+    fun just_execute_test_MlgRankClient() {
         // when
-        val coursePayloads = listOf(
-            MileagePayload(
-                CourseId("YCA1003", "01", "00"),
+        val payloads = listOf(
+            MlgRankPayload(
+                LectureId("YCA1003", "01", "00"),
                 Year.of(2023),
                 Semester.FIRST
             ),
-            MileagePayload(
-                CourseId("ANT3208", "01", "00"),
+            MlgRankPayload(
+                LectureId("ANT3208", "01", "00"),
                 Year.of(2024),
                 Semester.FIRST
             ),
-            MileagePayload(
-                CourseId("ECO3130", "03", "00"),
+            MlgRankPayload(
+                LectureId("ECO3130", "03", "00"),
                 Year.of(2024),
                 Semester.FIRST
             )
         )
 
-        coursePayloads
-            .map { payload -> MileageClient.request(payload).get() }
-            .onEach {resp -> println("response: ${resp}") }
+        payloads
+            .map { payload -> MlgRankClient.request(payload).get() }
+            .onEach { resp -> println("response: ${resp}") }
             .forEach { resp -> assertTrue(resp.isSuccess) }
 
     }
@@ -87,11 +87,11 @@ class YonseiClientTest {
     fun if_request_to_yonsei_server_failed_return_failed_with_custom_exception() {
         // when
         val invalidUrl = "https://underwood1.yonsei.ac.kr/sch/sles/SlescsCtr/findSchSlesHandbListFUCK.do"
-        val client = YonseiClient<DptGroupPayload>(invalidUrl)
+        val client = YonseiClient<CollegePayload>(invalidUrl)
 
         // given
         val result: Result<String> = client
-            .request(DptGroupPayload(Year.of(2025), Semester.FIRST))
+            .request(CollegePayload(Year.of(2025), Semester.FIRST))
             .get()
 
         // then
@@ -101,7 +101,7 @@ class YonseiClientTest {
         assertIs<YonseiRequestException>(exception)
 
         (exception as YonseiRequestException).let {
-            assertEquals(DptGroupPayload(Year.of(2025), Semester.FIRST), it.requestPayload)
+            assertEquals(CollegePayload(Year.of(2025), Semester.FIRST), it.requestPayload)
             assertEquals(invalidUrl, it.requestUrl)
         }
     }

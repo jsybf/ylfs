@@ -63,6 +63,7 @@ class CrawlJobCommand() : CliktCommand() {
         // set logging level
         val logger = LoggerFactory.getLogger(ROOT_LOGGER_NAME) as (ch.qos.logback.classic.Logger)
         logger.level = logLevel
+
         crawlJob(
             mysqlUsername,
             mysqlPassword,
@@ -72,6 +73,7 @@ class CrawlJobCommand() : CliktCommand() {
             requestSemester,
             requestDepth
         )
+
     }
 
 }

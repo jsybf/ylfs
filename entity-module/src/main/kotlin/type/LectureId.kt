@@ -1,6 +1,6 @@
 package io.gitp.ylfs.entity.type
 
-data class CourseId(
+data class LectureId(
     val mainId: String,
     val classId: String,
     val subId: String
