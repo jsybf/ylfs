@@ -9,8 +9,14 @@ dependencies {
 
     implementation(libs.logging.logback)
     implementation(libs.kotlinx.serialization.json)
+
     implementation(libs.mysql.connector.java)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.java.time)
+    implementation(libs.exposed.json)
     implementation(libs.hikari.cp)
+
     implementation(libs.clikt)
 
 }
