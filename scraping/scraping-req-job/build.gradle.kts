@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":entity-module"))
-    implementation(project(":crawl:ajax-crawl-core"))
+    implementation(project(":scraping:ajax-crawl-core"))
 
     implementation(libs.logging.logback)
     implementation(libs.kotlinx.serialization.json)

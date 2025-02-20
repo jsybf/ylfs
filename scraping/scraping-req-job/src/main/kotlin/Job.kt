@@ -1,4 +1,4 @@
-package io.gitp.ylfs.crawl.crawljob
+package io.gitp.ylfs.scraping.scraping_req_job
 
 import io.gitp.ylfs.crawl.client.*
 import io.gitp.ylfs.crawl.payload.*
@@ -213,4 +213,3 @@ internal class CrawlJob(
 
 
 }
-

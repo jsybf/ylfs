@@ -1,4 +1,4 @@
-package io.gitp.ylfs.parse_load_job
+package io.gitp.ylfs.scraping.scraping_tl_job
 
 import io.gitp.ylfs.entity.enums.GradeEvalMethod
 import io.gitp.ylfs.entity.enums.Language
@@ -55,13 +55,13 @@ class CrawledLectureViewRepository(
             college.code,
             dpt.name,
             dpt.code,
-        
+
             lecture.main_code,
             lecture.class_code,
             lecture.sub_code,
             lecture.name,
             lecture.eng_name,
-        
+
             lecture.professors,
             lecture.lecture_type,
             lecture.locations,
@@ -71,7 +71,7 @@ class CrawledLectureViewRepository(
             lecture.grade_eval_method,
             lecture.language_code
             # @formatter:on
-        
+
         FROM dpt_resp_view AS dpt
              JOIN crawl_job AS job ON job.crawl_job_id = dpt.crawl_job_id
              JOIN college_resp_view AS college ON dpt.college_code = college.code AND college.crawl_job_id = dpt.crawl_job_id

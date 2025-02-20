@@ -1,4 +1,4 @@
-package io.gitp.ylfs.crawl.crawljob
+package io.gitp.ylfs.scraping.scraping_req_job
 
 import ch.qos.logback.classic.Level
 import com.github.ajalt.clikt.core.CliktCommand
@@ -24,7 +24,7 @@ private class CrawlJobCommand : CliktCommand() {
 
     override fun help(context: Context): String = """
     request data to yonsei lecture finding server.
-    
+
     this cli can crawl the following data ${"\u0085"}
         - department group ${"\u0085"}
         - department ${"\u0085"}
@@ -32,7 +32,7 @@ private class CrawlJobCommand : CliktCommand() {
         - mileage ${"\u0085"}
     these data are hierarchical, where each of them depends on upper one.
     --depth option specifies request data target respecting this hierarchy.
-    
+
     (example)${"\u0085"}
     `--depth 3` means request course data. then program sequentially requests deptartment group ->
     department -> course to get course data.

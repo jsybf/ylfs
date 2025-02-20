@@ -1,4 +1,4 @@
-package io.gitp.ylfs.parse_load_job.tables
+package io.gitp.ylfs.scraping.scraping_tl_job.tables
 
 import org.jetbrains.exposed.dao.id.IntIdTable
 

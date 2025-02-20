@@ -1,4 +1,4 @@
-package io.gitp.ylfs.parse_load_job.parsers
+package io.gitp.ylfs.scraping.scraping_tl_job.parsers
 
 import io.gitp.ylfs.entity.enums.Day
 import io.gitp.ylfs.entity.model.LocAndSched

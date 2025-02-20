@@ -1,4 +1,4 @@
-package io.gitp.ylfs.crawl.crawljob
+package io.gitp.ylfs.scraping.scraping_req_job
 
 import com.zaxxer.hikari.HikariDataSource
 import io.gitp.ylfs.entity.type.Semester

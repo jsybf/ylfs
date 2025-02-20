@@ -1,4 +1,4 @@
-package io.gitp.ylfs.parse_load_job.tables.types
+package io.gitp.ylfs.scraping.scraping_tl_job.tables.types
 
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType
