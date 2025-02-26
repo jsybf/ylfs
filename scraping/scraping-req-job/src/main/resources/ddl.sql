@@ -1,55 +1,71 @@
-create table crawl_job
-(
+CREATE DATABASE IF NOT EXISTS crawl;
+USE crawl;
+
+CREATE TABLE crawl_job (
     crawl_job_id   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    start_datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    end_datetime   TIMESTAMP
+    year           year                                NOT NULL,
+    semester       varchar(6)                          NOT NULL CHECK (semester IN ('FIRST', 'SECOND')),
+    start_datetime timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    end_datetime   timestamp                           NULL
 );
 
-create table dpt_group_request
-(
-    dpt_group_request_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    crawl_job_id         INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
+CREATE TABLE college_resp (
+    college_resp_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    crawl_job_id    INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
 
-    year                 YEAR,
-    semester             VARCHAR(30),
-
-    http_resp_body       TEXT
+    http_resp_body  JSON NOT NULL
 );
 
-create table dpt_request
-(
-    dpt_request_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+# department request
+CREATE TABLE dpt_resp (
+    dpt_resp_id    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     crawl_job_id   INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
 
-    year           YEAR        NOT NULL,
-    semester       VARCHAR(30) NOT NULL,
-    dpt_group_id   VARCHAR(30) NOT NULL,
+    college_code   VARCHAR(6) NOT NULL,
 
-    http_resp_body MEDIUMTEXT
+    http_resp_body JSON       NOT NULL
 );
 
-create table course_request
-(
-    course_request_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    crawl_job_id      INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
+# ALTER TABLE dpt_resp
+#     CHANGE college_id college_code VARCHAR(6) NOT NULL;
 
-    year              YEAR        NOT NULL,
-    semester          VARCHAR(30) NOT NULL,
+CREATE TABLE lecture_resp (
+    lecture_resp_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    crawl_job_id    INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
 
-    dpt_group_id      VARCHAR(30) NOT NULL,
-    dpt_id            VARCHAR(30) NOT NULL,
+    college_code    VARCHAR(6) NOT NULL,
+    dpt_code        VARCHAR(6) NOT NULL,
 
-    http_resp_body    MEDIUMTEXT
+    http_resp_body  JSON        NOT NULL
 );
-create table mileage_request
-(
-    mileage_request_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    crawl_job_id       INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
 
-    year               YEAR        NOT NULL,
-    semester           VARCHAR(30) NOT NULL,
-    main_id            CHAR(7)     NOT NULL,
-    class_id           CHAR(2)     NOT NULL,
-    sub_id             CHAR(2)     NOT NULL,
-    http_resp_body     MEDIUMTEXT
+# ALTER TABLE lecture_resp
+#     CHANGE college_id college_code VARCHAR(6) NOT NULL;
+#
+# ALTER TABLE lecture_resp
+#     CHANGE dpt_id dpt_code VARCHAR(6) NOT NULL;
+
+
+# mileage rank request
+CREATE TABLE mlg_rank_resp (
+    mlg_rank_resp_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    crawl_job_id     INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
+
+    main_id          CHAR(7) NOT NULL,
+    class_id         CHAR(2) NOT NULL,
+    sub_id           CHAR(2) NOT NULL,
+
+    http_resp_body   JSON    NOT NULL
+);
+
+# mileage info request
+CREATE TABLE mlg_info_resp (
+    mlg_info_resp_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    crawl_job_id     INT UNSIGNED REFERENCES crawl_job (crawl_job_id),
+
+    main_id          CHAR(7) NOT NULL,
+    class_id         CHAR(2) NOT NULL,
+    sub_id           CHAR(2) NOT NULL,
+
+    http_resp_body   JSON    NOT NULL
 );

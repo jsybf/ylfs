@@ -170,47 +170,47 @@ class CrawledLectureViewRepository(
     }
 }
 
-fun main() {
-    val crawlDB: Database = Database.connect(
-        url = "jdbc:mysql://43.202.5.149:3306/crawl",
-        driver = "com.mysql.cj.jdbc.Driver",
-        user = "root",
-        password = "root_pass"
-    )
-    val db: Database = Database.connect(
-        url = "jdbc:mysql://43.202.5.149:3306/ylfs",
-        driver = "com.mysql.cj.jdbc.Driver",
-        user = "root",
-        password = "root_pass"
-    )
-
-    val crawledLectureRepo = CrawledLectureViewRepository(crawlDB)
-    val lectures = crawledLectureRepo.findAll().onEach { println(it) }
-
-    transaction(db) {
-        exec("SET FOREIGN_KEY_CHECKS = 0;")
-        exec("truncate term;")
-        exec("truncate college;")
-        exec("truncate dpt;")
-        exec("truncate dpt_lecture;")
-        exec("truncate lecture;")
-        exec("SET FOREIGN_KEY_CHECKS = 1;")
-    }
-
-    val termRepo = TermRepository(db)
-    val collegeRepo = CollegeRepostitory(db, termRepo)
-    val dptRepo = DptRepository(db, collegeRepo)
-    val lectureRepo = LectureRepository(db, dptRepo, termRepo)
-
-    runBlocking {
-        lectures
-            .chunked(30)
-            .map { lectureChunk ->
-                launch { lectureChunk.map { lectureRepo.insertIfNotExists(it) } }
-            }
-        // lectures.onEach { lecture ->
-        //     launch { lectureRepo.insertLecture(lecture) }
-        //     delay(1000)
-        // }
-    }
-}
+// fun main() {
+//     val crawlDB: Database = Database.connect(
+//         url = "jdbc:mysql://43.202.5.149:3306/crawl",
+//         driver = "com.mysql.cj.jdbc.Driver",
+//         user = "root",
+//         password = "root_pass"
+//     )
+//     val db: Database = Database.connect(
+//         url = "jdbc:mysql://43.202.5.149:3306/ylfs",
+//         driver = "com.mysql.cj.jdbc.Driver",
+//         user = "root",
+//         password = "root_pass"
+//     )
+//
+//     val crawledLectureRepo = CrawledLectureViewRepository(crawlDB)
+//     val lectures = crawledLectureRepo.findAll().onEach { println(it) }
+//
+//     transaction(db) {
+//         exec("SET FOREIGN_KEY_CHECKS = 0;")
+//         exec("truncate term;")
+//         exec("truncate college;")
+//         exec("truncate dpt;")
+//         exec("truncate dpt_lecture;")
+//         exec("truncate lecture;")
+//         exec("SET FOREIGN_KEY_CHECKS = 1;")
+//     }
+//
+//     val termRepo = TermRepository(db)
+//     val collegeRepo = CollegeRepostitory(db, termRepo)
+//     val dptRepo = DptRepository(db, collegeRepo)
+//     val lectureRepo = LectureRepository(db, dptRepo, termRepo)
+//
+//     runBlocking {
+//         lectures
+//             .chunked(30)
+//             .map { lectureChunk ->
+//                 launch { lectureChunk.map { lectureRepo.insertIfNotExists(it) } }
+//             }
+//         // lectures.onEach { lecture ->
+//         //     launch { lectureRepo.insertLecture(lecture) }
+//         //     delay(1000)
+//         // }
+//     }
+// }
