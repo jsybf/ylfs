@@ -1,7 +1,7 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.repositories.response
 
 import io.gitp.ylfs.entity.enums.Semester
-import io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt.DptRespDto
+import io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.LectureRespDto
 import io.gitp.ylfs.scraping.scraping_tl_job.utils.execAndMap
 import io.gitp.ylfs.scraping.scraping_tl_job.utils.getStringOrNull
 import kotlinx.serialization.json.Json
@@ -10,27 +10,28 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Year
 
-class LecutreRespRepository(
+class LectureRespRepository(
     private val db: Database
 ) {
     private val findAllQuery = """
-            SELECT 
+            SELECT lecture.college_code, lecture.dpt_code, lecture.http_resp_body, job.year, job.semester
             FROM lecture_resp as lecture
                 JOIN crawl_job AS job USING(crawl_job_id)
         """
 
-    fun findAll() = transaction(db) {
-        findAllQuery.execAndMap { rs ->
-
+    fun findAll(): List<LectureRespDto> = transaction(db) {
+        return@transaction findAllQuery.execAndMap { rs ->
             val yearStr: String = rs.getStringOrNull("job.year")!!
             val semesterStr: String = rs.getStringOrNull("job.semester")!!
-            val collegeCode: String = rs.getStringOrNull("dpt.college_code")!!
-            val respJsonStr: String = rs.getStringOrNull("dpt.http_resp_body")!!
+            val respJsonStr: String = rs.getStringOrNull("lecture.http_resp_body")!!
+            val dptCode: String = rs.getStringOrNull("lecture.dpt_code")!!
+            val collegeCode: String = rs.getStringOrNull("lecture.college_code")!!
 
-            DptRespDto(
+            LectureRespDto(
                 year = yearStr.slice(0..3).let { s -> Year.parse(s) },
                 semester = Semester.valueOf(semesterStr),
                 collegeCode = collegeCode,
+                dptCode = dptCode,
                 resp = Json.decodeFromString<JsonObject>(respJsonStr)
             )
         }

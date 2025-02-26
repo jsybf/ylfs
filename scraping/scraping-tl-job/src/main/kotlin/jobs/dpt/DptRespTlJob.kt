@@ -1,6 +1,7 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt
 
 import io.gitp.ylfs.entity.enums.Semester
+import io.gitp.ylfs.scraping.scraping_tl_job.repositories.DptLectureRepository
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 import repositories.DptRepository
@@ -72,6 +73,7 @@ class DptRespTLJob(
                 CompletableFuture.supplyAsync({ dptRepo.insertIfNotExists(dpt) }, threadPool)
             }
             .onEach { it.join() }
+
 
         threadPool.awaitTermination(1, TimeUnit.SECONDS)
         threadPool.shutdownNow().also { require(it.size == 0) }.onEach { println(it) }
