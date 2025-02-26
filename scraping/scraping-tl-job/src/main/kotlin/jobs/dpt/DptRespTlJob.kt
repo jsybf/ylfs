@@ -1,13 +1,12 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt
 
 import io.gitp.ylfs.entity.enums.Semester
-import io.gitp.ylfs.scraping.scraping_tl_job.repositories.DptLectureRepository
+import io.gitp.ylfs.scraping.scraping_tl_job.utils.supplyAsync
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 import repositories.DptRepository
 import repositories.response.DptRespRepository
 import java.time.Year
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -62,20 +61,21 @@ class DptRespTLJob(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun execute() {
+    fun execute(year: Year, semester: Semester) {
         val dpts: List<DptDto> = this.dptRespRepo
-            .findAll()
+            .findAll(year, semester)
             .flatMap { DptDto.parseResp(it) }
 
         dpts
             .map { dpt ->
-                this.logger.debug("inserting {}", dpt)
-                CompletableFuture.supplyAsync({ dptRepo.insertIfNotExists(dpt) }, threadPool)
+                supplyAsync(threadPool) {
+                    this.logger.debug("inserting {}", dpt)
+                    dptRepo.insertIfNotExists(dpt)
+                }
             }
             .onEach { it.join() }
 
 
-        threadPool.awaitTermination(1, TimeUnit.SECONDS)
-        threadPool.shutdownNow().also { require(it.size == 0) }.onEach { println(it) }
+        threadPool.shutdownNow().also { require(it.size == 0) }
     }
 }

@@ -8,14 +8,13 @@ import io.gitp.ylfs.scraping.scraping_tl_job.repositories.DptLectureRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.LectureRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.SubClassRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureRespRepository
+import io.gitp.ylfs.scraping.scraping_tl_job.utils.supplyAsync
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.time.Year
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 data class LectureRespDto(
     val year: Year,
@@ -23,14 +22,6 @@ data class LectureRespDto(
     val collegeCode: String,
     val dptCode: String,
     val resp: JsonObject
-)
-
-data class LectureKey(
-    val year: Year,
-    val semester: Semester,
-    val mainCode: String,
-    val classCode: String,
-    val id: Int?
 )
 
 data class LectureDto(
@@ -63,35 +54,36 @@ object LectureRespParser {
     fun parse(lectureDto: LectureRespDto): List<LectureDto> {
         val lectureJsonArr = lectureDto.resp.jsonObject["dsSles251"]!!.jsonArray
 
-        return lectureJsonArr.map { lectureJson ->
-            println(lectureJson.jsonObject["cdt"]!!.jsonPrimitive.content)
-            LectureDto(
-                year = lectureDto.year,
-                semester = lectureDto.semester,
+        return lectureJsonArr
+            .map { it.jsonObject }
+            .map { lectureJson ->
+                LectureDto(
+                    year = lectureDto.year,
+                    semester = lectureDto.semester,
 
-                collegeCode = lectureDto.collegeCode,
-                dptCode = lectureDto.dptCode,
+                    collegeCode = lectureDto.collegeCode,
+                    dptCode = lectureDto.dptCode,
 
-                mainCode = lectureJson.jsonObject["subjtnb"]!!.jsonPrimitive.content,
-                classCode = lectureJson.jsonObject["corseDvclsNo"]!!.jsonPrimitive.content,
-                subCode = lectureJson.jsonObject["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
+                    mainCode = lectureJson["subjtnb"]!!.jsonPrimitive.content,
+                    classCode = lectureJson["corseDvclsNo"]!!.jsonPrimitive.content,
+                    subCode = lectureJson["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
 
-                name = lectureJson.jsonObject["subjtNm"]!!.jsonPrimitive.content,
-                professors = parseProfessors(lectureJson.jsonObject["cgprfNm"]!!.jsonPrimitive.content),
+                    name = lectureJson["subjtNm"]!!.jsonPrimitive.content,
+                    professors = parseProfessors(lectureJson["cgprfNm"]!!.jsonPrimitive.content),
 
-                grades = parseGrades(lectureJson.jsonObject["hy"]!!.jsonPrimitive.contentOrNull),
+                    grades = parseGrades(lectureJson["hy"]!!.jsonPrimitive.contentOrNull),
 
-                credit = lectureJson.jsonObject["cdt"]!!.jsonPrimitive.content.let { BigDecimal(it) },
-                gradeEvalMethod = parseGradeEvalMethod(lectureJson.jsonObject["gradeEvlMthdDivNm"]!!.jsonPrimitive.contentOrNull),
-                language = parseLanguageCode(lectureJson.jsonObject["srclnLctreLangDivCd"]!!.jsonPrimitive.intOrNull),
+                    credit = lectureJson["cdt"]!!.jsonPrimitive.content.let { BigDecimal(it) },
+                    gradeEvalMethod = parseGradeEvalMethod(lectureJson["gradeEvlMthdDivNm"]!!.jsonPrimitive.contentOrNull),
+                    language = parseLanguageCode(lectureJson["srclnLctreLangDivCd"]!!.jsonPrimitive.intOrNull),
 
-                lectureType = LectureType.parse(lectureJson.jsonObject["subsrtDivNm"]!!.jsonPrimitive.contentOrNull)
-            )
-        }
+                    lectureType = LectureType.parse(lectureJson["subsrtDivNm"]!!.jsonPrimitive.contentOrNull)
+                )
+            }
     }
 
     fun parseProfessors(str: String?): List<String> {
-        return if(str == null) emptyList()
+        return if (str == null) emptyList()
         else str.split(",")
     }
 
@@ -117,10 +109,6 @@ object LectureRespParser {
 
 }
 
-fun main() {
-    LectureRespParser.parseGrades(null).let { println(it) }
-}
-
 class LectureTLJob(
     private val lectureRespRepository: LectureRespRepository,
     private val lectureRepository: LectureRepository,
@@ -130,46 +118,47 @@ class LectureTLJob(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun execute() {
+    fun execute(year: Year, semester: Semester) {
         val lectures = lectureRespRepository
-            .findAll()
+            .findAll(year, semester)
             .flatMap { resp -> LectureDto.parse(resp) }
-            .slice(0..<100)
 
         lectures.map { lecture ->
-            CompletableFuture.supplyAsync(
-                {
-                    lectureRepository.insertIfNotExists(lecture)
-                    this.logger.debug("inserted{}", lecture)
-                },
-                threadPool
-            )
+            supplyAsync(threadPool) {
+                lectureRepository.insertIfNotExists(lecture)
+                this.logger.debug("inserted {}", lecture)
+
+            }
         }.onEach { it.join() }
 
         lectures.map { lecture ->
-            this.logger.debug("inserting {}", lecture)
-            dptLectureRepo.insertIfNotExists(
-                lecture.year,
-                lecture.semester,
-                lecture.mainCode,
-                lecture.classCode,
-                lecture.dptCode,
-                lecture.lectureType
-            )
-        }
+            supplyAsync(threadPool) {
+                dptLectureRepo.insertIfNotExists(
+                    lecture.year,
+                    lecture.semester,
+                    lecture.mainCode,
+                    lecture.classCode,
+                    lecture.dptCode,
+                    lecture.lectureType
+                )
+                this.logger.debug("dpt-lecture for {}", lecture)
+            }
+        }.forEach { it.join() }
 
         lectures.map { lecture ->
-            subClassRepo.insertIfNotExists(
-                lecture.year,
-                lecture.semester,
-                lecture.mainCode,
-                lecture.classCode,
-                lecture.subCode
-            )
-        }
 
+            supplyAsync(threadPool) {
+                subClassRepo.insertIfNotExists(
+                    lecture.year,
+                    lecture.semester,
+                    lecture.mainCode,
+                    lecture.classCode,
+                    lecture.subCode
+                )
+                this.logger.debug("subclass for {}", lecture)
+            }
+        }.forEach { it.join() }
 
-        threadPool.awaitTermination(1, TimeUnit.SECONDS)
-        threadPool.shutdownNow().also { require(it.size == 0) }.onEach { println(it) }
+        threadPool.shutdownNow().also { require(it.size == 0) }
     }
 }

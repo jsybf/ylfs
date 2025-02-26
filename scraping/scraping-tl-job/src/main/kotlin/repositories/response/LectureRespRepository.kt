@@ -13,23 +13,22 @@ import java.time.Year
 class LectureRespRepository(
     private val db: Database
 ) {
-    private val findAllQuery = """
+    private fun findAllQuery(year: Year, semester: Semester) = """
             SELECT lecture.college_code, lecture.dpt_code, lecture.http_resp_body, job.year, job.semester
             FROM lecture_resp as lecture
                 JOIN crawl_job AS job USING(crawl_job_id)
+           WHERE job.year = '${year}' and job.semester = '${semester.name}'
         """
 
-    fun findAll(): List<LectureRespDto> = transaction(db) {
-        return@transaction findAllQuery.execAndMap { rs ->
-            val yearStr: String = rs.getStringOrNull("job.year")!!
-            val semesterStr: String = rs.getStringOrNull("job.semester")!!
+    fun findAll(year: Year, semester: Semester): List<LectureRespDto> = transaction(db) {
+        return@transaction findAllQuery(year, semester).execAndMap { rs ->
             val respJsonStr: String = rs.getStringOrNull("lecture.http_resp_body")!!
             val dptCode: String = rs.getStringOrNull("lecture.dpt_code")!!
             val collegeCode: String = rs.getStringOrNull("lecture.college_code")!!
 
             LectureRespDto(
-                year = yearStr.slice(0..3).let { s -> Year.parse(s) },
-                semester = Semester.valueOf(semesterStr),
+                year = year,
+                semester = semester,
                 collegeCode = collegeCode,
                 dptCode = dptCode,
                 resp = Json.decodeFromString<JsonObject>(respJsonStr)

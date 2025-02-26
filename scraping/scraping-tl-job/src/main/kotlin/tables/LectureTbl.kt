@@ -19,7 +19,7 @@ object LectureTbl : IntIdTable("lecture", "lecture_id") {
 
     val grades = varchar("grades", 20)
 
-    val credit = decimal("credit", 2, 1)
+    val credit = decimal("credit", 3, 1)
     val gradeEvalMethod = enumerationByName<GradeEvalMethod>("grade_eval_method", 10)
     val language = enumerationByName<Language>("language", 10)
     val description = text("description").nullable()

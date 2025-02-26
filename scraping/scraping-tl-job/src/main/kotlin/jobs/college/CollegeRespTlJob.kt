@@ -1,18 +1,18 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.jobs.college
 
 import io.gitp.ylfs.entity.enums.Semester
+import io.gitp.ylfs.scraping.scraping_tl_job.utils.supplyAsync
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.slf4j.LoggerFactory
 import repositories.CollegeRepository
 import repositories.TermRepository
 import repositories.response.CollegeRespRepository
 import java.time.Year
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 data class TermDto(
     val year: Year,
@@ -40,21 +40,32 @@ class CollegeRespTlJob(
     private val threadPool: ExecutorService = Executors.newFixedThreadPool(40)
 ) {
 
-    fun execute() {
-        val collegeResps: List<CollegeRespDto> = collegeRespRepo.findAll()
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    fun execute(year: Year, semester: Semester) {
+        val collegeResps: List<CollegeRespDto> = collegeRespRepo.findAll(year, semester)
 
-        val collegeDtos = collegeResps.flatMap { CollegeRespParser.toCollegeDtos(it) }
-        val termDtos = collegeResps.map { TermDto(it.year, it.semester) }.distinct()
 
-        termDtos
-            .map { CompletableFuture.supplyAsync({ termRepo.insertIfNotExists(it) }, threadPool) }
-            .map { it.join() }
-        collegeDtos
-            .map { CompletableFuture.supplyAsync({ collegeRepo.insertIfNotExists(it) }, threadPool) }
-            .map { it.join() }
-        threadPool.awaitTermination(1, TimeUnit.SECONDS)
-        threadPool.shutdownNow().also { require(it.size == 0) }.onEach { println(it) }
-        println("execute complete")
+        collegeResps
+            .map { TermDto(it.year, it.semester) }
+            .distinct()
+            .map {
+                supplyAsync(threadPool) {
+                    termRepo.insertIfNotExists(it)
+                    logger.debug("inserted term {}", it)
+                }
+            }
+
+        collegeResps
+            .flatMap { CollegeRespParser.toCollegeDtos(it) }
+            .map {
+                supplyAsync(threadPool) {
+                    collegeRepo.insertIfNotExists(it)
+                    logger.debug("inserted college {}", it)
+                }
+            }
+            .onEach { it.join() }
+
+        threadPool.shutdownNow().also { require(it.size == 0) }
     }
 }
 
