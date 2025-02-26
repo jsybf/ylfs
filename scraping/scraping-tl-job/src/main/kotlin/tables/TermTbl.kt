@@ -1,7 +1,7 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.tables
 
 import io.gitp.ylfs.entity.enums.Semester
-import io.gitp.ylfs.parse_load_job.tables.types.year
+import io.gitp.ylfs.scraping.scraping_tl_job.tables.types.year
 import org.jetbrains.exposed.dao.id.IntIdTable
 
 object TermTbl : IntIdTable("term", "term_id") {
