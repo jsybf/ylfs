@@ -6,7 +6,7 @@ import io.gitp.ylfs.entity.enums.Semester
 import io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt.DptRespTLJob
 import io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.LectureETLJob
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureRespRepository
-import io.gitp.ylfs.scraping.scraping_tl_job.tables.LectureParsedRepository
+import io.gitp.ylfs.scraping.scraping_tl_job.tables.LectureProcessRepository
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -60,7 +60,7 @@ fun main() {
     val termRepo = TermRepository(db)
     val collegeRepo = CollegeRepository(db, termRepo)
     val dptRepo = DptRepository(db, termRepo, collegeRepo)
-    val lectureParsedRepo = LectureParsedRepository(db)
+    val lectureParsedRepo = LectureProcessRepository(db)
 
     val collegeEtlJob = CollegeEtlJob(collegeRespRepo, termRepo, collegeRepo, threadPool)
     val dptRespTLJob = DptRespTLJob(dptRespRepo, dptRepo, threadPool)

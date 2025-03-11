@@ -22,7 +22,7 @@ class SubClassRepository(
         return@transaction (SubClassTbl innerJoin LectureTbl)
             .select(SubClassTbl.id)
             .where {
-                (SubClassTbl.subId eq subCode) and
+                (SubClassTbl.subCode eq subCode) and
                         (LectureTbl.year eq year) and
                         (LectureTbl.semester eq semester) and
                         (LectureTbl.mainCode eq mainCode) and
@@ -57,7 +57,7 @@ class SubClassRepository(
         getIdOrNull(year, semester, mainCode, classCode, subCode)?.let { id -> return@transaction id }
 
         return@transaction SubClassTbl.insertAndGetId {
-            it[SubClassTbl.subId] = subCode
+            it[SubClassTbl.subCode] = subCode
             it[SubClassTbl.lectureId] = getLectureIdOrNull(year, semester, mainCode, classCode)!!
         }.value
 

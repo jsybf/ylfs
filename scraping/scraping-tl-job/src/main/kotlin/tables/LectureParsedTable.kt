@@ -39,7 +39,7 @@ object LectureParsedTable : UIntIdTable("lecture_process_tbl", "lecture_process_
     val locAndScheds = json<List<LocAndSched>>("loc_sched", Json.Default)
 }
 
-class LectureParsedRepository(
+class LectureProcessRepository(
     private val db: Database
 ) {
     fun batchInsert(lectureDtoList: List<LectureDto>) = transaction(db) {
