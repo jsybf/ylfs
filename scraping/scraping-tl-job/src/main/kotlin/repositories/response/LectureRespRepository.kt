@@ -21,18 +21,19 @@ class LectureRespRepository(
         """
 
     fun findAll(year: Year, semester: Semester): List<LectureRespDto> = transaction(db) {
-        return@transaction findAllQuery(year, semester).execAndMap { rs ->
-            val respJsonStr: String = rs.getStringOrNull("lecture.http_resp_body")!!
-            val dptCode: String = rs.getStringOrNull("lecture.dpt_code")!!
-            val collegeCode: String = rs.getStringOrNull("lecture.college_code")!!
+        findAllQuery(year, semester)
+            .execAndMap { rs ->
+                val respJsonStr: String = rs.getStringOrNull("lecture.http_resp_body")!!
+                val dptCode: String = rs.getStringOrNull("lecture.dpt_code")!!
+                val collegeCode: String = rs.getStringOrNull("lecture.college_code")!!
 
-            LectureRespDto(
-                year = year,
-                semester = semester,
-                collegeCode = collegeCode,
-                dptCode = dptCode,
-                resp = Json.decodeFromString<JsonObject>(respJsonStr)
-            )
-        }
+                LectureRespDto(
+                    year = year,
+                    semester = semester,
+                    collegeCode = collegeCode,
+                    dptCode = dptCode,
+                    resp = Json.decodeFromString<JsonObject>(respJsonStr)
+                )
+            }
     }
 }

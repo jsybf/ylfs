@@ -5,10 +5,8 @@ import com.zaxxer.hikari.HikariDataSource
 import io.gitp.ylfs.entity.enums.Semester
 import io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt.DptRespTLJob
 import io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.LectureTLJob
-import io.gitp.ylfs.scraping.scraping_tl_job.repositories.DptLectureRepository
-import io.gitp.ylfs.scraping.scraping_tl_job.repositories.LectureRepository
-import io.gitp.ylfs.scraping.scraping_tl_job.repositories.SubClassRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureRespRepository
+import io.gitp.ylfs.scraping.scraping_tl_job.tables.LectureParsedRepository
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -47,6 +45,8 @@ fun main() {
         exec("truncate dpt;")
         exec("truncate lecture;")
         exec("truncate dpt_lecture;")
+        exec("truncate loc_sched;")
+        exec("truncate subclass;")
         exec("SET FOREIGN_KEY_CHECKS = 1;")
     }
 
@@ -57,13 +57,11 @@ fun main() {
     val termRepo = TermRepository(db)
     val collegeRepo = CollegeRepository(db, termRepo)
     val dptRepo = DptRepository(db, termRepo, collegeRepo)
-    val lectureRepo = LectureRepository(db)
-    val dptLectureRepo = DptLectureRepository(db)
-    val subClassRepo = SubClassRepository(db)
+    val lectureRespProcessedRepository = LectureParsedRepository(db)
 
     val collegeRespTLJob = CollegeRespTlJob(collegeRespRepo, termRepo, collegeRepo)
     val dptRespTLJob = DptRespTLJob(dptRespRepo, dptRepo)
-    val lectureTLJob = LectureTLJob(lectureRespRepo, lectureRepo, dptLectureRepo, subClassRepo)
+    val lectureTLJob = LectureTLJob(lectureRespRepo, lectureRespProcessedRepository, db)
 
     collegeRespTLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
     dptRespTLJob.execute(year = Year.of(2023), semester = Semester.FIRST)

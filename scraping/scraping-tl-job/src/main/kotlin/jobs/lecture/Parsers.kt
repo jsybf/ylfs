@@ -1,15 +1,21 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture
 
 import io.gitp.ylfs.entity.enums.Day
+import io.gitp.ylfs.entity.enums.GradeEvalMethod
+import io.gitp.ylfs.entity.enums.Language
+import io.gitp.ylfs.entity.enums.LectureType
 import io.gitp.ylfs.entity.model.LocAndSched
 import io.gitp.ylfs.entity.model.LocationUnion
 import io.gitp.ylfs.entity.model.Period
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.*
+import java.math.BigDecimal
 
 internal object LocationScheduleParser {
 
-    internal fun parse(locations: String, schedules: String): List<LocAndSched> {
-        return associateLocAndSched(locations, schedules)
+    internal fun parse(locations: String?, schedules: String?): List<LocAndSched> {
+        if (locations == null && schedules == null) return emptyList()
+        if ((locations == null && schedules != null) || (locations != null && schedules == null)) throw IllegalStateException("fuck")
+        return associateLocAndSched(locations!!, schedules!!)
             .flatMap { (location, schedule) ->
                 val locationParsed: LocationUnion = LocationParser.parse(location)
                 val scheduleParsedList: List<Period> = ScheduleParser.parse(schedule)
@@ -67,7 +73,7 @@ private object LocationParser {
         // normal building names
         listOf(
             "외", "위", "상본", "상별", "과", "공A", "공B", "공C", "공D", "연", "빌", "백", "삼", "교", "광", "음",
-            "새천", "이윤재", "대별", "경영", "원", "첨", "루", "공학원", "신", "중입자", "IBS", "KLI", "성"
+            "새천", "이윤재", "대별", "경영", "원", "첨", "루", "공학원", "신", "중입자", "IBS", "KLI", "성", "유"
         ),
         // sport building name
         listOf(
@@ -75,7 +81,7 @@ private object LocationParser {
         ),
         // fucking edge cases
         listOf(
-            "석산홀세미나", "윤주용홀", "제1강의실", "제2강의실"
+            "석산홀세미나", "윤주용홀", "제1강의실", "제2강의실", "선수기숙사 트레이닝실", "미우"
         )
     ).flatten()
 
@@ -124,6 +130,65 @@ private object ScheduleParser {
     }
 }
 
+object LectureRespParser {
+    fun parse(lectureDto: LectureRespDto): List<LectureDto> {
+        val lectureJsonArr = lectureDto.resp.jsonObject["dsSles251"]!!.jsonArray
+
+        return lectureJsonArr
+            .map { it.jsonObject }
+            .map { lectureJson ->
+                LectureDto(
+                    year = lectureDto.year,
+                    semester = lectureDto.semester,
+
+                    collegeCode = lectureDto.collegeCode,
+                    dptCode = lectureDto.dptCode,
+
+                    mainCode = lectureJson["subjtnb"]!!.jsonPrimitive.content,
+                    classCode = lectureJson["corseDvclsNo"]!!.jsonPrimitive.content,
+                    subCode = lectureJson["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
+
+                    name = lectureJson["subjtNm"]!!.jsonPrimitive.content,
+                    professors = parseProfessors(lectureJson["cgprfNm"]!!.jsonPrimitive.content),
+
+                    grades = parseGrades(lectureJson["hy"]!!.jsonPrimitive.contentOrNull),
+
+                    credit = lectureJson["cdt"]!!.jsonPrimitive.content.let { BigDecimal(it) },
+                    gradeEvalMethod = parseGradeEvalMethod(lectureJson["gradeEvlMthdDivNm"]!!.jsonPrimitive.contentOrNull),
+                    language = parseLanguageCode(lectureJson["srclnLctreLangDivCd"]!!.jsonPrimitive.intOrNull),
+
+                    lectureType = LectureType.parse(lectureJson["subsrtDivNm"]!!.jsonPrimitive.contentOrNull),
+                    locAndScheds = LocationScheduleParser.parse(lectureJson["lecrmNm"]!!.jsonPrimitive.contentOrNull, lectureJson["lctreTimeNm"]!!.jsonPrimitive.contentOrNull)
+                )
+            }
+    }
+
+    fun parseProfessors(str: String?): List<String> {
+        return if (str == null) emptyList()
+        else str.split(",")
+    }
+
+    fun parseGrades(str: String?): List<Int> {
+        return if (str == null) emptyList()
+        else str.split(",").map { it.toInt() }.sorted()
+    }
+
+    fun parseGradeEvalMethod(str: String?): GradeEvalMethod = when (str) {
+        null -> GradeEvalMethod.NONE
+        "P/NP" -> GradeEvalMethod.P_OR_NP
+        "절대평가" -> GradeEvalMethod.ABSOLUTE
+        "상대평가" -> GradeEvalMethod.RELATIVE
+        else -> throw IllegalStateException("unexpected grade eval method:${str}")
+    }
+
+    fun parseLanguageCode(code: Int?) = when (code) {
+        null -> Language.KOREAN
+        10 -> Language.ENGLISH
+        20 -> Language.ETC
+        else -> throw IllegalStateException("unexpected language code:${code}")
+    }
+
+}
 fun main() {
     val offlineStr = Json.encodeToString(LocationUnion.OffLine("building1", "address1")).also { println(it) }
     println(Json.decodeFromString<LocationUnion>(offlineStr))
