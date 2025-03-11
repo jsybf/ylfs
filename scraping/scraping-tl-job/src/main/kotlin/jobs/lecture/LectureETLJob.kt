@@ -9,33 +9,30 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.time.Year
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 
-class LectureTLJob(
-    private val lectureRespRepository: LectureRespRepository,
+class LectureETLJob(
+    private val lectureRespRepo: LectureRespRepository,
     private val lectureParsedRepository: LectureParsedRepository,
-    private val db: Database
+    private val db: Database,
+    private val threadPool: ExecutorService
 ) {
+
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun ingress(year: Year, semester: Semester): List<LectureDto> = lectureRespRepository
-        .also { logger.info("loading lecture respond") }
-        .findAll(year, semester)
-        .flatMap { resp: LectureRespDto -> LectureDto.parse(resp) }
+    private fun extract(year: Year, semester: Semester): List<LectureRespDto> = lectureRespRepo.findAll(year, semester)
 
-    fun egress(lectureDtos: List<LectureDto>) {
+    private fun transform(responses: List<LectureRespDto>): List<LectureDto> = responses.flatMap { LectureDto.parse(it) }
+
+    private fun load(lectureDtos: List<LectureDto>) {
         logger.info("creating temporary processing table")
         transaction(db) { exec(lectureParsedTblDDL) }
 
-        val threadPool: ExecutorService = Executors.newFixedThreadPool(40)
         logger.info("inserting parsed lecture response to temporary processing table")
         lectureDtos
             .chunked(256)
             .map { supplyAsync(threadPool) { lectureParsedRepository.batchInsert(it) } }
             .forEach { it.join() }
-
-        threadPool.shutdownNow().also { require(it.size == 0) }
 
         logger.info("copy inserting from temporary processing table to lecture table")
         transaction(db) { exec(copyInsertLectureSql) }
@@ -48,11 +45,24 @@ class LectureTLJob(
 
         logger.info("droping temporary processing table")
         transaction(db) { exec("drop table lecture_process_tbl") }
+
+    }
+
+    fun ingress(year: Year, semester: Semester): List<LectureDto> = lectureRespRepo
+        .also { logger.info("loading lecture respond") }
+        .findAll(year, semester)
+        .flatMap { resp: LectureRespDto -> LectureDto.parse(resp) }
+
+    fun egress(lectureDtos: List<LectureDto>) {
     }
 
     fun execute(year: Year, semester: Semester) {
-        val lectureList = ingress(year, semester)
-        egress(lectureList)
+        logger.info("extracting lecture_resp table")
+        extract(year, semester)
+            .also { logger.info("transforming lecture response") }
+            .let { lectureResps: List<LectureRespDto> -> transform(lectureResps) }
+            .also { logger.info("loading lecture response") }
+            .let { lectureDtos: List<LectureDto> -> load(lectureDtos) }
     }
 }
 

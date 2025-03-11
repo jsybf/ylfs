@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.gitp.ylfs.entity.enums.Semester
 import io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt.DptRespTLJob
-import io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.LectureTLJob
+import io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.LectureETLJob
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureRespRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.tables.LectureParsedRepository
 import org.jetbrains.exposed.sql.Database
@@ -16,6 +16,8 @@ import repositories.TermRepository
 import repositories.response.CollegeRespRepository
 import repositories.response.DptRespRepository
 import java.time.Year
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 fun main() {
     val scrapingDB: Database =
@@ -49,6 +51,7 @@ fun main() {
         exec("truncate subclass;")
         exec("SET FOREIGN_KEY_CHECKS = 1;")
     }
+    val threadPool: ExecutorService = Executors.newFixedThreadPool(40)
 
     val collegeRespRepo = CollegeRespRepository(scrapingDB)
     val dptRespRepo = DptRespRepository(scrapingDB)
@@ -57,18 +60,15 @@ fun main() {
     val termRepo = TermRepository(db)
     val collegeRepo = CollegeRepository(db, termRepo)
     val dptRepo = DptRepository(db, termRepo, collegeRepo)
-    val lectureRespProcessedRepository = LectureParsedRepository(db)
+    val lectureParsedRepo = LectureParsedRepository(db)
 
-    val collegeRespTLJob = CollegeRespTlJob(collegeRespRepo, termRepo, collegeRepo)
-    val dptRespTLJob = DptRespTLJob(dptRespRepo, dptRepo)
-    val lectureTLJob = LectureTLJob(lectureRespRepo, lectureRespProcessedRepository, db)
+    val collegeEtlJob = CollegeEtlJob(collegeRespRepo, termRepo, collegeRepo, threadPool)
+    val dptRespTLJob = DptRespTLJob(dptRespRepo, dptRepo, threadPool)
+    val lectureETLJob = LectureETLJob(lectureRespRepo, lectureParsedRepo, db, threadPool)
 
-    collegeRespTLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
+    collegeEtlJob.execute(year = Year.of(2023), semester = Semester.FIRST)
     dptRespTLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
-    lectureTLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
+    lectureETLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
 
-    // lectureTLJob.executeBatch()
-
-
-    println("foo")
+    threadPool.shutdownNow().also { require(it.size == 0) }
 }
