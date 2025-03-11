@@ -1,8 +1,8 @@
 package io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture
 
 import io.gitp.ylfs.entity.enums.Semester
+import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureProcessRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureRespRepository
-import io.gitp.ylfs.scraping.scraping_tl_job.tables.LectureProcessRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.utils.supplyAsync
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
