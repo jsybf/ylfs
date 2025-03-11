@@ -53,7 +53,7 @@ class CollegeRespTlJob(
                     termRepo.insertIfNotExists(it)
                     logger.debug("inserted term {}", it)
                 }
-            }
+            }.onEach { it.join() }
 
         collegeResps
             .flatMap { CollegeRespParser.toCollegeDtos(it) }

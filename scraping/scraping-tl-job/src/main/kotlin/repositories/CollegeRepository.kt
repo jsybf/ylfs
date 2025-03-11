@@ -12,7 +12,7 @@ import java.time.Year
 
 class CollegeRepository(
     private val db: Database,
-    val termRepo: TermRepository
+    private val termRepo: TermRepository
 ) {
     fun getIdOrNull(year: Year, semester: Semester, collegeCode: String): Int? = transaction(db) {
         return@transaction (CollegeTbl innerJoin TermTbl)
