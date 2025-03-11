@@ -48,14 +48,6 @@ class LectureETLJob(
 
     }
 
-    fun ingress(year: Year, semester: Semester): List<LectureDto> = lectureRespRepo
-        .also { logger.info("loading lecture respond") }
-        .findAll(year, semester)
-        .flatMap { resp: LectureRespDto -> LectureDto.parse(resp) }
-
-    fun egress(lectureDtos: List<LectureDto>) {
-    }
-
     fun execute(year: Year, semester: Semester) {
         logger.info("extracting lecture_resp table")
         extract(year, semester)
