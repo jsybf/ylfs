@@ -22,7 +22,7 @@ import java.time.Year
 fun main() {
     val scrapingDB: Database =
         Database.connect(
-            url = "jdbc:mysql://52.78.137.40/crawl",
+            url = "jdbc:mysql://3.38.191.11/crawl",
             driver = "com.mysql.cj.jdbc.Driver",
             user = "root",
             password = "root_pass",
@@ -31,7 +31,7 @@ fun main() {
 
     val db = HikariConfig()
         .apply {
-            jdbcUrl = "jdbc:mysql://52.78.137.40/ylfs"
+            jdbcUrl = "jdbc:mysql://3.38.191.11/ylfs"
             driverClassName = "com.mysql.cj.jdbc.Driver"
             username = "root"
             password = "root_pass"

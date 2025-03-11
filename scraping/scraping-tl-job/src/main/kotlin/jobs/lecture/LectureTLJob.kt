@@ -121,7 +121,13 @@ class LectureTLJob(
     fun execute(year: Year, semester: Semester) {
         val lectures = lectureRespRepository
             .findAll(year, semester)
-            .flatMap { resp -> LectureDto.parse(resp) }
+            .flatMap { resp: LectureRespDto -> LectureDto.parse(resp) }
+
+        lectures.map { lecture: LectureDto ->
+            val lectureId = lectureRepository.insertIfNotExists(lecture)
+            dptLectureRepo.insertIfNotExists()
+
+        }
 
         lectures.map { lecture ->
             supplyAsync(threadPool) {

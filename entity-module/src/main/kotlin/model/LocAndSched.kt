@@ -2,8 +2,20 @@ package io.gitp.ylfs.entity.model
 
 import io.gitp.ylfs.entity.enums.Day
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonContentPolymorphicSerializer
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonObject
 
-@Serializable
+object LocationSerializer : JsonContentPolymorphicSerializer<LocationUnion>(LocationUnion::class) {
+    override fun selectDeserializer(element: JsonElement) = when {
+        "building" in element.jsonObject -> LocationUnion.OffLine.serializer()
+        "duplicateCapability" in element.jsonObject -> LocationUnion.Online.serializer()
+        element.jsonObject.keys.isEmpty() -> LocationUnion.RealTimeOnline.serializer()
+        else -> throw IllegalArgumentException("fuck")
+    }
+}
+
+@Serializable(with = LocationSerializer::class)
 sealed interface LocationUnion {
 
     @Serializable

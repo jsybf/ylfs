@@ -1,9 +1,10 @@
-package io.gitp.ylfs.scraping.scraping_tl_job.parsers
+package io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture
 
 import io.gitp.ylfs.entity.enums.Day
 import io.gitp.ylfs.entity.model.LocAndSched
 import io.gitp.ylfs.entity.model.LocationUnion
 import io.gitp.ylfs.entity.model.Period
+import kotlinx.serialization.json.Json
 
 internal object LocationScheduleParser {
 
@@ -121,4 +122,11 @@ private object ScheduleParser {
             else -> throw IllegalArgumentException("unexpected hangul day: [${hangulDay}]")
         }
     }
+}
+
+fun main() {
+    val offlineStr = Json.encodeToString(LocationUnion.OffLine("building1", "address1")).also { println(it) }
+    println(Json.decodeFromString<LocationUnion>(offlineStr))
+    val realTimeStr = Json.encodeToString(LocationUnion.RealTimeOnline)
+    println(Json.decodeFromString<LocationUnion>(realTimeStr))
 }

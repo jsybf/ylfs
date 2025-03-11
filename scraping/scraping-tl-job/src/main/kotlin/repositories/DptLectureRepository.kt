@@ -51,7 +51,6 @@ class DptLectureRepository(
             ?.get(DptTbl.id)
             ?.value
     }
-
     fun insertIfNotExists(year: Year, semester: Semester, mainCode: String, classCode: String, dptCode: String, lectureType: LectureType): Int =
         transaction(db) {
             getIdOrNull(year, semester, mainCode, classCode, dptCode)?.let { id -> return@transaction id }
