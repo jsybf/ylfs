@@ -7,4 +7,4 @@ rootProject.name = "ylfs"
 include(":entity-module")
 include(":scraping:ajax-crawl-core")
 include(":scraping:scraping-req-job")
-include(":scraping:scraping-tl-job")
+include(":scraping:scraping-etl-job")
