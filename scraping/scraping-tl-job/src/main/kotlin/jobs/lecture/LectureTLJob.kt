@@ -122,49 +122,5 @@ class LectureTLJob(
         val lectures = lectureRespRepository
             .findAll(year, semester)
             .flatMap { resp: LectureRespDto -> LectureDto.parse(resp) }
-
-        lectures.map { lecture: LectureDto ->
-            val lectureId = lectureRepository.insertIfNotExists(lecture)
-            dptLectureRepo.insertIfNotExists()
-
-        }
-
-        lectures.map { lecture ->
-            supplyAsync(threadPool) {
-                lectureRepository.insertIfNotExists(lecture)
-                this.logger.debug("inserted {}", lecture)
-
-            }
-        }.onEach { it.join() }
-
-        lectures.map { lecture ->
-            supplyAsync(threadPool) {
-                dptLectureRepo.insertIfNotExists(
-                    lecture.year,
-                    lecture.semester,
-                    lecture.mainCode,
-                    lecture.classCode,
-                    lecture.dptCode,
-                    lecture.lectureType
-                )
-                this.logger.debug("dpt-lecture for {}", lecture)
-            }
-        }.forEach { it.join() }
-
-        lectures.map { lecture ->
-
-            supplyAsync(threadPool) {
-                subClassRepo.insertIfNotExists(
-                    lecture.year,
-                    lecture.semester,
-                    lecture.mainCode,
-                    lecture.classCode,
-                    lecture.subCode
-                )
-                this.logger.debug("subclass for {}", lecture)
-            }
-        }.forEach { it.join() }
-
-        threadPool.shutdownNow().also { require(it.size == 0) }
     }
 }

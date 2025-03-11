@@ -5,8 +5,6 @@ plugins {
 rootProject.name = "ylfs"
 
 include(":entity-module")
-include(":yonsei-client-module")
-include(":lecture-db-module")
 include(":scraping:ajax-crawl-core")
 include(":scraping:scraping-req-job")
 include(":scraping:scraping-tl-job")
