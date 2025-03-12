@@ -96,7 +96,7 @@ internal class CrawlJobRepository(
     fun batchInsertDptResps(dptResps: List<DptResp>): List<Int> = connPool.connection.use { conn ->
         conn.buildSql(
             """
-        INSERT INTO dpt_resp (crawl_job_id, college_id, http_resp_body)
+        INSERT INTO dpt_resp (crawl_job_id, college_code, http_resp_body)
         VALUE (${jobId!!}, ?, ?)
     """
         ).use { stmt ->
@@ -115,7 +115,8 @@ internal class CrawlJobRepository(
     fun batchInsertLectureResps(lectureResps: List<LectureResp>): List<Int> = connPool.connection.use { conn ->
         conn.buildSql(
             """
-        INSERT INTO lecture_resp (crawl_job_id, college_id, dpt_id, http_resp_body)
+        INSERT INTO lecture_resp (crawl_job_id, college_code, dpt_code, http_resp_body)
+
         VALUE ('${jobId!!}', ?, ?, ?)
     """.trimIndent()
         ).use { stmt ->
@@ -136,7 +137,7 @@ internal class CrawlJobRepository(
     fun batchInsertMlgRankResps(mlgRankResps: List<MlgRankResp>): List<Int> = connPool.connection.use { conn ->
         conn.buildSql(
             """
-                INSERT INTO mlg_rank_resp (crawl_job_id, main_id, class_id, sub_id, http_resp_body)
+                INSERT INTO mlg_rank_resp (crawl_job_id, main_code, class_code, sub_code, http_resp_body)
                 VALUE ('${jobId!!}', ?, ?, ?, ?)
             """.trimIndent()
         ).use { stmt ->
@@ -158,7 +159,7 @@ internal class CrawlJobRepository(
     fun batchInsertMlgInfoResps(mlgRankResps: List<MlgInfoResp>): List<Int> = connPool.connection.use { conn ->
         conn.buildSql(
             """
-                INSERT INTO mlg_info_resp (crawl_job_id, main_id, class_id, sub_id, http_resp_body)
+                INSERT INTO mlg_info_resp (crawl_job_id, main_code, class_code, sub_code, http_resp_body)
                 VALUE ('${jobId!!}', ?, ?, ?, ?)
             """.trimIndent()
         ).use { stmt ->
