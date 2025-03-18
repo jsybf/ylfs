@@ -14,7 +14,7 @@ internal object LocationScheduleParser {
 
     internal fun parse(locations: String?, schedules: String?): List<LocAndSched> {
         if (locations == null && schedules == null) return emptyList()
-        if ((locations == null && schedules != null) || (locations != null && schedules == null)) throw IllegalStateException("fuck")
+        if ((locations == null && schedules != null) || (locations != null && schedules == null)) throw IllegalStateException("fuck locations:${locations} schedules:${schedules}")
         return associateLocAndSched(locations!!, schedules!!)
             .flatMap { (location, schedule) ->
                 val locationParsed: LocationUnion = LocationParser.parse(location)
@@ -137,6 +137,8 @@ object LectureRespParser {
         return lectureJsonArr
             .map { it.jsonObject }
             .map { lectureJson ->
+                // 폐강된 수업은 필터링
+                if (lectureJson["rmvlcYn"]!!.jsonPrimitive.intOrNull == 1) return@map null
                 LectureDto(
                     year = lectureDto.year,
                     semester = lectureDto.semester,
@@ -161,6 +163,7 @@ object LectureRespParser {
                     locAndScheds = LocationScheduleParser.parse(lectureJson["lecrmNm"]!!.jsonPrimitive.contentOrNull, lectureJson["lctreTimeNm"]!!.jsonPrimitive.contentOrNull)
                 )
             }
+            .filterNotNull()
     }
 
     fun parseProfessors(str: String?): List<String> {
