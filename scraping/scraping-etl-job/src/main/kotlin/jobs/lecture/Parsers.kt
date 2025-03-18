@@ -8,6 +8,7 @@ import io.gitp.ylfs.entity.model.LocAndSched
 import io.gitp.ylfs.entity.model.LocationUnion
 import io.gitp.ylfs.entity.model.Period
 import kotlinx.serialization.json.*
+import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 
 internal object LocationScheduleParser {
@@ -69,11 +70,12 @@ internal object LocationScheduleParser {
 
 
 private object LocationParser {
+    private val logger = LoggerFactory.getLogger(LocationParser::class.java)
     private val buildingNames = listOf(
         // normal building names
         listOf(
             "외", "위", "상본", "상별", "과", "공A", "공B", "공C", "공D", "연", "빌", "백", "삼", "교", "광", "음",
-            "새천", "이윤재", "대별", "경영", "원", "첨", "루", "공학원", "신", "중입자", "IBS", "KLI", "성", "유"
+            "새천", "이윤재", "대별", "경영", "원", "첨", "루", "공학원", "신", "중입자", "IBS", "KLI", "성", "유", "I자A"
         ),
         // sport building name
         listOf(
@@ -88,18 +90,20 @@ private object LocationParser {
 
     fun parse(location: String): LocationUnion {
         val buildingName: String? = buildingNames.find { buildingName -> location.startsWith(buildingName) }
+        if (buildingName != null) {
+            val address = location.removePrefix(buildingName).removePrefix("_").removeSuffix("_")
+            return LocationUnion.OffLine(buildingName, address)
+        }
 
-        if (buildingName == null) {
-            return when (location) {
-                "동영상콘텐츠" -> LocationUnion.Online(true)
-                "실시간온라인" -> LocationUnion.RealTimeOnline
-                "동영상_중복수강불가" -> LocationUnion.Online(false)
-                else -> throw IllegalArgumentException("unexpected online location : $location")
+        return when (location) {
+            "동영상콘텐츠" -> LocationUnion.Online(true)
+            "실시간온라인" -> LocationUnion.RealTimeOnline
+            "동영상_중복수강불가" -> LocationUnion.Online(false)
+            else -> {
+                return LocationUnion.OffLine(location, null).also { logger.warn("can't parse building name and address from [${location}]. just return {}", it) }
             }
         }
 
-        val address = location.removePrefix(buildingName).removePrefix("_").removeSuffix("_")
-        return LocationUnion.OffLine(buildingName, address)
     }
 }
 
@@ -192,6 +196,7 @@ object LectureRespParser {
     }
 
 }
+
 fun main() {
     val offlineStr = Json.encodeToString(LocationUnion.OffLine("building1", "address1")).also { println(it) }
     println(Json.decodeFromString<LocationUnion>(offlineStr))
