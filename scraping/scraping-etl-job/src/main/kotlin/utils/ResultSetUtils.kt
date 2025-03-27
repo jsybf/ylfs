@@ -13,6 +13,15 @@ fun <T : Any> String.execAndMap(transform: (ResultSet) -> T): List<T> {
     return result
 }
 
+fun <T : Any> String.execAndNullableMap(transform: (ResultSet) -> T?): List<T?> {
+    val result = mutableListOf<T?>()
+    TransactionManager.current().exec(this) { rs ->
+        while (rs.next()) {
+            result += transform(rs)
+        }
+    }
+    return result
+}
 
 internal fun ResultSet.getIntOrNull(columnName: String): Int? = this.getInt(columnName).let { if (this.wasNull()) null else it }
 internal fun ResultSet.getStringOrNull(columnName: String): String? = this.getString(columnName)

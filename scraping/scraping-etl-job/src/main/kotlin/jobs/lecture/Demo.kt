@@ -1,10 +1,13 @@
-package io.gitp.ylfs.scraping.scraping_tl_job.jobs.college
+package io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.gitp.ylfs.entity.enums.Semester
+import io.gitp.ylfs.scraping.scraping_tl_job.jobs.college.CollegeEtlJob
 import io.gitp.ylfs.scraping.scraping_tl_job.jobs.dpt.DptRespTLJob
-import io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.LectureETLJob
+import io.gitp.ylfs.scraping.scraping_tl_job.jobs.mileage.MileageInfo
+import io.gitp.ylfs.scraping.scraping_tl_job.jobs.mileage.MileageInfoRespExtractor
+import io.gitp.ylfs.scraping.scraping_tl_job.jobs.mileage.MileageLoader
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureProcessRepository
 import io.gitp.ylfs.scraping.scraping_tl_job.repositories.response.LectureRespRepository
 import org.jetbrains.exposed.sql.Database
@@ -15,6 +18,7 @@ import repositories.DptRepository
 import repositories.TermRepository
 import repositories.response.CollegeRespRepository
 import repositories.response.DptRespRepository
+import java.sql.DriverManager
 import java.time.Year
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -22,7 +26,7 @@ import java.util.concurrent.Executors
 fun main() {
     val scrapingDB: Database =
         Database.connect(
-            url = "jdbc:mysql://3.38.191.11/crawl",
+            url = "jdbc:mysql://localhost/crawl",
             driver = "com.mysql.cj.jdbc.Driver",
             user = "root",
             password = "root_pass",
@@ -31,7 +35,7 @@ fun main() {
 
     val db = HikariConfig()
         .apply {
-            jdbcUrl = "jdbc:mysql://3.38.191.11/ylfs"
+            jdbcUrl = "jdbc:mysql://localhost/ylfs"
             driverClassName = "com.mysql.cj.jdbc.Driver"
             username = "root"
             password = "root_pass"
@@ -66,9 +70,16 @@ fun main() {
     val dptRespTLJob = DptRespTLJob(dptRespRepo, dptRepo, threadPool)
     val lectureETLJob = LectureETLJob(lectureRespRepo, lectureParsedRepo, db, threadPool)
 
-    collegeEtlJob.execute(year = Year.of(2023), semester = Semester.FIRST)
-    dptRespTLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
-    lectureETLJob.execute(year = Year.of(2023), semester = Semester.FIRST)
+    val targetYear = Year.of(2024)
+    val targetSemester = Semester.FIRST
+    collegeEtlJob.execute(year = targetYear, semester = targetSemester)
+    dptRespTLJob.execute(year = targetYear, semester = targetSemester)
+    lectureETLJob.execute(year = targetYear, semester = targetSemester)
+
+    val mileageInfoList: List<MileageInfo> = MileageInfoRespExtractor(scrapingDB).extract(year = targetYear, semester = targetSemester).filterNotNull().distinct()
+    val conn = DriverManager.getConnection("jdbc:mysql://localhost/ylfs", "root", "root_pass")
+    MileageLoader(conn).load(mileageInfoList, 40)
+
 
     threadPool.shutdownNow().also { require(it.size == 0) }
 }

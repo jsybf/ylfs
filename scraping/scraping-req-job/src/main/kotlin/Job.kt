@@ -69,6 +69,7 @@ internal class CrawlJob(
     private fun requestMlgRanks(mlgReqIds: List<MlgReqId>): List<CompletableFuture<MlgRankResp>> {
         return mlgReqIds
             .map { reqId ->
+                Thread.sleep(10)
                 MlgRankClient
                     .request(MlgRankPayload(reqId.lectureId, year, semester))
                     .thenApplyAsync { responseResult: Result<String> ->
@@ -80,6 +81,7 @@ internal class CrawlJob(
     private fun requestMlgInfo(mlgReqIds: List<MlgReqId>): List<CompletableFuture<MlgInfoResp>> {
         return mlgReqIds
             .map { reqId ->
+                Thread.sleep(10)
                 MlgInfoClient
                     .request(MlgInfoPayload(reqId.lectureId, year, semester))
                     .thenApplyAsync { responseResult: Result<String> ->
@@ -212,4 +214,11 @@ internal class CrawlJob(
     }
 
 
+}
+
+fun main() {
+    MlgRankClient
+        .request(MlgRankPayload(LectureId("ELL3934", "01", "00"), Year.of(2024), Semester.SECOND))
+        .get()
+        .also { println(it.getOrNull()) }
 }

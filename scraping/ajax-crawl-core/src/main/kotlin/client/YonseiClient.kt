@@ -7,6 +7,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 open class YonseiClient<P : AbstractPayload>(
@@ -19,6 +20,7 @@ open class YonseiClient<P : AbstractPayload>(
         .uri(URI(requestUrl))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .POST(HttpRequest.BodyPublishers.ofString(payload))
+        .timeout(Duration.ofSeconds(10))
         .build()
 
     fun request(payload: P): CompletableFuture<Result<String>> =
