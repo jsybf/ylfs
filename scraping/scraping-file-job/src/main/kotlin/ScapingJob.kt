@@ -6,8 +6,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.asDeferred
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.Path
 import java.time.Year
 import kotlin.io.path.createDirectories
@@ -15,13 +17,13 @@ import kotlin.io.path.writeText
 
 private fun requestColleage(collegeReq: CollegeRequest): Deferred<CollegeResponse> = CollegeClient
     .request(collegeReq.toPayload())
-    .thenApplyAsync { respResult: Result<String> -> CollegeResponse(collegeReq, respResult.getOrThrow()) }
+    .thenApplyAsync { respResult: Result<String> -> CollegeResponse(collegeReq, Json.decodeFromString(respResult.getOrThrow())) }
     .asDeferred()
 
 private fun requestDpt(dptReq: DptRequest): Deferred<DptResponse> {
     val dptRespAsync = DptClient
         .request(dptReq.toPayload())
-        .thenApplyAsync { respResult: Result<String> -> DptResponse(dptReq, respResult.getOrThrow()) }
+        .thenApplyAsync { respResult: Result<String> -> DptResponse(dptReq, Json.decodeFromString(respResult.getOrThrow())) }
         .asDeferred()
     return dptRespAsync
 
@@ -30,7 +32,7 @@ private fun requestDpt(dptReq: DptRequest): Deferred<DptResponse> {
 private fun requestLecture(lectureReq: LectureRequest): Deferred<LectureResponse> {
     val dptRespAsync = LectureClient
         .request(lectureReq.toPayload())
-        .thenApplyAsync { respResult: Result<String> -> LectureResponse(lectureReq, respResult.getOrThrow()) }
+        .thenApplyAsync { respResult: Result<String> -> LectureResponse(lectureReq, Json.decodeFromString(respResult.getOrThrow())) }
         .asDeferred()
     return dptRespAsync
 }
@@ -38,7 +40,7 @@ private fun requestLecture(lectureReq: LectureRequest): Deferred<LectureResponse
 private fun requestMlgInfo(mlgReq: MlgRequest): Deferred<MlgInfoResponse> {
     val dptRespAsync = MlgInfoClient
         .request(mlgReq.toMlgInfoPayload())
-        .thenApplyAsync { respResult: Result<String> -> MlgInfoResponse(mlgReq, respResult.getOrThrow()) }
+        .thenApplyAsync { respResult: Result<String> -> MlgInfoResponse(mlgReq, Json.decodeFromString(respResult.getOrThrow())) }
         .asDeferred()
     return dptRespAsync
 }
@@ -47,40 +49,41 @@ private fun requestMlgInfo(mlgReq: MlgRequest): Deferred<MlgInfoResponse> {
 private fun requestMlgRank(mlgReq: MlgRequest): Deferred<MlgRankResponse> {
     val dptRespAsync = MlgRankClient
         .request(mlgReq.toMlgRankPayload())
-        .thenApplyAsync { respResult: Result<String> -> MlgRankResponse(mlgReq, respResult.getOrThrow()) }
+        .thenApplyAsync { respResult: Result<String> -> MlgRankResponse(mlgReq, Json.decodeFromString(respResult.getOrThrow())) }
         .asDeferred()
     return dptRespAsync
 }
 
-private val extractCollegeId = Regex(""" "deptCd":"(?<dptId>\w+)" """, RegexOption.COMMENTS)
-private val extractDptId = Regex(""" "deptCd":"(?<dptId>\d+)" """, RegexOption.COMMENTS)
-private val extractCourseId = Regex(""" "subjtnbCorsePrcts":"([\dA-Z]{7})-(\d{2})-(\d{2})" """, RegexOption.COMMENTS)
-
-private fun parseCollegeResponse(collegeResp: CollegeResponse): List<DptRequest> {
-    return extractCollegeId
-        .findAll(collegeResp.resp.toString())
-        .map { matchResult: MatchResult ->
-            DptRequest(collegeResp.request.year, collegeResp.request.semester, matchResult.destructured.component1())
+private fun parseCollegeResponse(collegeResp: CollegeResponse): List<DptRequest> =
+    collegeResp.resp
+        .jsonObject["dsUnivCd"]!!
+        .jsonArray
+        .map { jsonObj ->
+            val collegeCode = jsonObj.jsonObject["deptCd"]!!.jsonPrimitive.content
+            DptRequest(collegeResp.request.year, collegeResp.request.semester, collegeCode)
         }
-        .toList()
-}
 
 private fun parseDptRsponse(dptResp: DptResponse): List<LectureRequest> =
-    extractDptId
-        .findAll(dptResp.resp)
-        .map { matchResult -> LectureRequest(dptResp.request.year, dptResp.request.semester, dptResp.request.collegeCode, matchResult.destructured.component1()) }.toList()
+    dptResp.resp
+        .jsonObject["dsFaclyCd"]!!
+        .jsonArray
+        .map { jsonObj ->
+            val dptCode = jsonObj.jsonObject["deptCd"]!!.jsonPrimitive.content
+            LectureRequest(dptResp.request.year, dptResp.request.semester, dptResp.request.collegeCode, dptCode)
+        }
 
 private fun parseLectureResponse(lectureResp: LectureResponse): List<MlgRequest> =
-    extractCourseId
-        .findAll(lectureResp.resp)
-        .map { matchResult: MatchResult ->
+    lectureResp.resp
+        .jsonObject["dsSles251"]!!
+        .jsonArray
+        .map { jsonObj ->
             val lecturecode = LectureCode(
-                mainCode = matchResult.destructured.component1(),
-                classCode = matchResult.destructured.component2(),
-                subCode = matchResult.destructured.component3()
+                mainCode = jsonObj.jsonObject["subjtnb"]!!.jsonPrimitive.content,
+                classCode = jsonObj.jsonObject["corseDvclsNo"]!!.jsonPrimitive.content,
+                subCode = jsonObj.jsonObject["prctsCorseDvclsNo"]!!.jsonPrimitive.content,
             )
             MlgRequest(lectureResp.request.year, lectureResp.request.semester, lectureResp.request.collegeCode, lectureResp.request.dptCode, lecturecode)
-        }.toList()
+        }
 
 private fun saveToFile(filePath: Path, content: String) {
     filePath.writeText(content)
@@ -96,7 +99,9 @@ private fun buildJsonArr(jsonObjStrList: List<String>): String = buildString {
     append("]")
 }
 
-suspend fun job(year: Year, semester: Semester, basePath: Path) {
+suspend fun job(year: Year, semester: Semester, basePath: Path, delay: Long = 4) {
+    basePath.createDirectories()
+
     val collegeResp: CollegeResponse = requestColleage(CollegeRequest(year, semester)).await()
     saveToFile(basePath.resolve("college.json"), Json.encodeToString(collegeResp))
 
@@ -111,23 +116,15 @@ suspend fun job(year: Year, semester: Semester, basePath: Path) {
 
     val mlgReqList = lectureRespList.map(::parseLectureResponse).flatten()
     val mlgInfoRespList = mlgReqList.map {
-        delay(5)
+        delay(delay)
         requestMlgInfo(it)
     }.awaitAll()
     saveToFile(basePath.resolve("mlg-info.json"), Json.encodeToString(mlgInfoRespList))
 
     val mlgRankRespList = mlgReqList.map {
-        delay(5)
+        delay(delay)
         requestMlgRank(it)
     }.awaitAll()
     saveToFile(basePath.resolve("mlg-rank.json"), Json.encodeToString(mlgRankRespList))
 
-}
-
-fun main() {
-    val basePath = Path.of("./25-1").toAbsolutePath().normalize()
-    basePath.createDirectories()
-    runBlocking {
-        job(Year.of(2025), Semester.FIRST, basePath)
-    }
 }

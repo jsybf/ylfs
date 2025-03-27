@@ -4,6 +4,7 @@ import io.gitp.ylfs.crawl.payload.*
 import io.gitp.ylfs.entity.type.LectureId
 import io.gitp.ylfs.entity.type.Semester
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import java.time.Year
 
 @Serializable
@@ -61,30 +62,30 @@ data class MlgRequest(
 @Serializable
 data class CollegeResponse(
     val request: CollegeRequest,
-    val resp: String
+    val resp: JsonObject
 )
 
 @Serializable
 data class DptResponse(
     val request: DptRequest,
-    val resp: String
+    val resp: JsonObject
 )
 
 @Serializable
 data class LectureResponse(
     val request: LectureRequest,
-    val resp: String
+    val resp: JsonObject
 )
 
 @Serializable
 data class MlgInfoResponse(
     val request: MlgRequest,
-    val resp: String
+    val resp: JsonObject
 )
 
 @Serializable
 data class MlgRankResponse(
     val request: MlgRequest,
-    val resp: String
+    val resp: JsonObject
 )
 
