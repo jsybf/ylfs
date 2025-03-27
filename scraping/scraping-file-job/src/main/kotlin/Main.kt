@@ -1,5 +1,5 @@
 package io.gitp.yfls.scarping.job.file
 
-fun main() {
-    println("this is scrpaing-file-job module")
-}
+import com.github.ajalt.clikt.core.main
+
+fun main(args: Array<String>) = ScapeThenSaveFileCommand().main(args)

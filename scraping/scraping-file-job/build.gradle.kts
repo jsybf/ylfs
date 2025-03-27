@@ -16,7 +16,7 @@ dependencies {
 
 }
 
-val mainClassRef = "io.gitp.ylfs.scraping.scraping_req_job.MainKt"
+val mainClassRef = "io.gitp.yfls.scarping.job.file.MainKt"
 
 application {
     mainClass = mainClassRef
