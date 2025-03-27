@@ -7,7 +7,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import java.nio.file.Path
 import java.time.Year
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 
 private fun requestColleage(collegeReq: CollegeRequest): Deferred<CollegeResponse> = CollegeClient
     .request(collegeReq.toPayload())
@@ -75,33 +79,55 @@ private fun parseLectureResponse(lectureResp: LectureResponse): List<MlgRequest>
                 classCode = matchResult.destructured.component2(),
                 subCode = matchResult.destructured.component3()
             )
-            MlgRequest(lectureResp.request.year, lectureResp.request.semester, lectureResp.request.collegeCode, lectureResp.request.departmentCode, lecturecode)
+            MlgRequest(lectureResp.request.year, lectureResp.request.semester, lectureResp.request.collegeCode, lectureResp.request.dptCode, lecturecode)
         }.toList()
 
+private fun saveToFile(filePath: Path, content: String) {
+    filePath.writeText(content)
+}
 
-suspend fun job(year: Year, semester: Semester) {
-    val collegeResp = requestColleage(CollegeRequest(year, semester)).await()
+private fun buildJsonArr(jsonObjStrList: List<String>): String = buildString {
+    append("[")
+    for (i in jsonObjStrList.indices) {
+        append(jsonObjStrList[i])
+        if (i != jsonObjStrList.size - 1) append(",")
+
+    }
+    append("]")
+}
+
+suspend fun job(year: Year, semester: Semester, basePath: Path) {
+    val collegeResp: CollegeResponse = requestColleage(CollegeRequest(year, semester)).await()
+    saveToFile(basePath.resolve("college.json"), Json.encodeToString(collegeResp))
+
 
     val dptReqList = parseCollegeResponse(collegeResp)
     val dptRespList = dptReqList.map { requestDpt(it) }.awaitAll()
+    saveToFile(basePath.resolve("dpt.json"), Json.encodeToString(dptRespList))
 
     val lectureReqList = dptRespList.map(::parseDptRsponse).flatten()
     val lectureRespList = lectureReqList.map { requestLecture(it) }.awaitAll()
+    saveToFile(basePath.resolve("lecture.json"), Json.encodeToString(lectureRespList))
 
     val mlgReqList = lectureRespList.map(::parseLectureResponse).flatten()
     val mlgInfoRespList = mlgReqList.map {
-        delay(10)
+        delay(5)
         requestMlgInfo(it)
     }.awaitAll()
-    val mlgRank = mlgReqList.map {
-        delay(10)
+    saveToFile(basePath.resolve("mlg-info.json"), Json.encodeToString(mlgInfoRespList))
+
+    val mlgRankRespList = mlgReqList.map {
+        delay(5)
         requestMlgRank(it)
     }.awaitAll()
+    saveToFile(basePath.resolve("mlg-rank.json"), Json.encodeToString(mlgRankRespList))
 
 }
 
 fun main() {
+    val basePath = Path.of("./25-1").toAbsolutePath().normalize()
+    basePath.createDirectories()
     runBlocking {
-        job(Year.of(2025), Semester.FIRST)
+        job(Year.of(2025), Semester.FIRST, basePath)
     }
 }
