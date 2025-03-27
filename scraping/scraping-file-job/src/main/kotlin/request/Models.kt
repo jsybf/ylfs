@@ -1,5 +1,6 @@
-package io.gitp.yfls.scarping.job.file
+package io.gitp.yfls.scarping.job.file.request
 
+import io.gitp.yfls.scarping.job.file.YearSerializer
 import io.gitp.ylfs.crawl.payload.*
 import io.gitp.ylfs.entity.type.LectureId
 import io.gitp.ylfs.entity.type.Semester
