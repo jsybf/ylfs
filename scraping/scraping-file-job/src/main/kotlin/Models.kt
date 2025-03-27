@@ -3,7 +3,6 @@ package io.gitp.yfls.scarping.job.file
 import io.gitp.ylfs.crawl.payload.*
 import io.gitp.ylfs.entity.type.LectureId
 import io.gitp.ylfs.entity.type.Semester
-import kotlinx.serialization.json.JsonObject
 import java.time.Year
 
 data class CollegeRequest(
@@ -32,55 +31,45 @@ data class LectureRequest(
 
 data class LectureCode(
     val mainCode: String,
-    val classCoce: String,
+    val classCode: String,
     val subCode: String,
 ) {
-    fun toLectureId(): LectureId = LectureId(mainCode, classCoce, subCode)
+    fun toLectureId(): LectureId = LectureId(mainCode, classCode, subCode)
 }
 
-data class MlgInfoRequest(
+data class MlgRequest(
     val year: Year,
     val semester: Semester,
     val collegeCode: String,
     val departmentCode: String,
     val lectureCode: LectureCode
 ) {
-    fun toPayload(): MlgInfoPayload = MlgInfoPayload(lectureCode.toLectureId(), year, semester)
-}
-
-
-data class MlgRankRequest(
-    val year: Year,
-    val semester: Semester,
-    val collegeCode: String,
-    val departmentCode: String,
-    val lectureCode: LectureCode
-) {
-    fun toPayload(): MlgRankPayload = MlgRankPayload(lectureCode.toLectureId(), year, semester)
+    fun toMlgInfoPayload(): MlgInfoPayload = MlgInfoPayload(lectureCode.toLectureId(), year, semester)
+    fun toMlgRankPayload(): MlgRankPayload = MlgRankPayload(lectureCode.toLectureId(), year, semester)
 }
 
 data class CollegeResponse(
     val request: CollegeRequest,
-    val resp: JsonObject
+    val resp: String
 )
 
 data class DptResponse(
     val request: DptRequest,
-    val resp: JsonObject
+    val resp: String
 )
 
 data class LectureResponse(
     val request: LectureRequest,
-    val resp: JsonObject
+    val resp: String
 )
 
 data class MlgInfoResponse(
-    val request: MlgInfoRequest,
-    val resp: JsonObject
+    val request: MlgRequest,
+    val resp: String
 )
 
 data class MlgRankResponse(
-    val request: MlgRankRequest,
-    val resp: JsonObject
+    val request: MlgRequest,
+    val resp: String
 )
 
