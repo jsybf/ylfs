@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":scraping:ajax-crawl-core"))
 
     implementation(libs.logging.logback)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.mysql.connector.java)
     implementation(libs.hikari.cp)

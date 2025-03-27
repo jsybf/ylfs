@@ -22,7 +22,7 @@ exposed-json = { group = "org.jetbrains.exposed", name = "exposed-json", version
 hikari-cp = { group = "com.zaxxer", name = "HikariCP", version = "6.2.1" }
 
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version = "5.0.3" }
-
+kotlinx-coroutines-core = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.1"}
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin_version" }
