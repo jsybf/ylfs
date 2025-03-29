@@ -1,9 +1,12 @@
 package io.gitp.yfls.scarping.job.file.transform
 
+import io.gitp.yfls.scarping.job.file.YearSerializer
 import io.gitp.yfls.scarping.job.file.request.MlgRankResponse
+import io.gitp.ylfs.entity.type.Semester
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.nio.file.Path
+import java.time.Year
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -17,6 +20,13 @@ enum class Major(val raw: String) {
 
 @Serializable
 data class MlgRankVo(
+    @Serializable(with = YearSerializer::class)
+    val year: Year,
+    val semester: Semester,
+    val mainCode: String,
+    val classCode: String,
+    val subCode: String,
+
     val ifSuccess: Boolean,
     val mlgRank: Int,
     val mlgValue: Int,
@@ -36,6 +46,13 @@ fun transformMlgRankResp(mlgRankResp: MlgRankResponse): List<MlgRankVo> {
 
     return respBodyList.map { respBody ->
         MlgRankVo(
+            year = mlgRankResp.request.year,
+            semester = mlgRankResp.request.semester,
+
+            mainCode = mlgRankResp.request.lectureCode.mainCode,
+            classCode = mlgRankResp.request.lectureCode.classCode,
+            subCode = mlgRankResp.request.lectureCode.subCode,
+
             ifSuccess = respBody["mlgAppcsPrcesDivNm"]!!.jsonPrimitive.contentOrNull?.let { MlgRankParser.parseYN2Boolean(it) } ?: true,
             mlgRank = respBody["mlgRank"]!!.jsonPrimitive.int,
             mlgValue = respBody["mlgVal"]!!.jsonPrimitive.int,
