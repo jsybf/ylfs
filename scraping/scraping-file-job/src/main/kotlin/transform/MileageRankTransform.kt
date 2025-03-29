@@ -8,7 +8,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 enum class Major(val raw: String) {
-    MAJOR("Y(Y)"), DUAL_MAJOR("Y(N)"), NON_MAJOR("N(N)");
+    MAJOR("Y(Y)"), DUAL_MAJOR_INCLUDED("Y(N)"), DUAL_MAJOR_UNINCLUDED("N(Y)"), NON_MAJOR("N(N)");
 
     companion object {
         fun ofRaw(raw: String): Major? = entries.find { it.raw == raw }
@@ -35,7 +35,7 @@ fun transformMlgRankResp(mlgRankResp: MlgRankResponse): List<MlgRankVo> {
     val respBodyList = mlgRankResp.resp["dsSles440"]!!.jsonArray.map { it.jsonObject }
 
     return respBodyList.map { respBody ->
-        val mlgRank = MlgRankVo(
+        MlgRankVo(
             ifSuccess = respBody["mlgAppcsPrcesDivNm"]!!.jsonPrimitive.contentOrNull?.let { MlgRankParser.parseYN2Boolean(it) } ?: true,
             mlgRank = respBody["mlgRank"]!!.jsonPrimitive.int,
             mlgValue = respBody["mlgVal"]!!.jsonPrimitive.int,
@@ -49,8 +49,6 @@ fun transformMlgRankResp(mlgRankResp: MlgRankResponse): List<MlgRankVo> {
             totalCreditRatio = respBody["ttCmpsjCdtRto"]!!.jsonPrimitive.float,
             totalCreditRatioFrac = respBody["ttCmpsjGrdtnCmpsjCdt"]!!.jsonPrimitive.content,
         )
-        println(mlgRank)
-        mlgRank
     }
 }
 

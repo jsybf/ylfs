@@ -9,7 +9,7 @@ enum class LectureType(val displayName: String) {
     TYPE_10("UICE"), TYPE_11("CC"), TYPE_12("ME"), TYPE_13("MB"), TYPE_14("MR"),
     TYPE_15("전공"), TYPE_16("청강"), TYPE_17("선택"), TYPE_18("공통"), TYPE_19("공기"),
     TYPE_20("학선"), TYPE_21("교필"), TYPE_22("전탐"), TYPE_23("교선"), TYPE_24("기교"),
-    TYPE_25("선교"), TYPE_26("학기"), TYPE_27("학필"), TYPE_28("계기"), TYPE_NONE("None");
+    TYPE_25("선교"), TYPE_26("학기"), TYPE_27("학필"), TYPE_28("계기"), TYPE_29("재수강"), TYPE_NONE("None");
 
     companion object {
         fun parse(name: String?): LectureType {

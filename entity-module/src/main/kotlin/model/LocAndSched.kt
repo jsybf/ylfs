@@ -22,6 +22,9 @@ sealed interface LocationUnion {
     data object RealTimeOnline : LocationUnion
 
     @Serializable
+    data object UnKnown : LocationUnion
+
+    @Serializable
     data class Online(val duplicateCapability: Boolean) : LocationUnion
 
     @Serializable

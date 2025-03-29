@@ -14,10 +14,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
-import java.nio.file.Path
 import java.time.Year
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 @Serializable
 data class LectureVo(
@@ -69,7 +66,7 @@ fun transfromLectureResp(lecture: LectureResponse): List<LectureVo> {
             val languageCode: Int? = respBody["srclnLctreLangDivCd"]!!.jsonPrimitive.intOrNull
 
             val lectureType: String = respBody["subsrtDivNm"]!!.jsonPrimitive.content
-            val loc: String = respBody["lecrmNm"]!!.jsonPrimitive.content
+            val loc: String? = respBody["lecrmNm"]!!.jsonPrimitive.contentOrNull
             val sched: String = respBody["lctreTimeNm"]!!.jsonPrimitive.content
 
             LectureVo(
@@ -115,7 +112,7 @@ object LectureParser {
         else -> throw IllegalStateException("unexpected language code:${code}")
     }
 
-    fun parselocAnsSched(loc: String, sched: String): List<LocAndSched> {
+    fun parselocAnsSched(loc: String?, sched: String): List<LocAndSched> {
         return LocationScheduleParser.parse(loc, sched)
     }
 }
@@ -125,7 +122,8 @@ internal object LocationScheduleParser {
     internal fun parse(locations: String?, schedules: String?): List<LocAndSched> {
         return when {
             (locations == null && schedules == null) -> emptyList()
-            (locations == null && schedules != null) || (locations != null && schedules == null) -> throw IllegalStateException("location or scheduels should be all null or non not. one of them can't be null.  locations:${locations} schedules:${schedules}")
+            (locations != null && schedules == null) -> throw IllegalStateException("location or scheduels should be all null or non not. one of them can't be null.  locations:${locations} schedules:${schedules}")
+            (locations == null && schedules != null) -> ScheduleParser.parse(schedules).map { LocAndSched(it, LocationUnion.UnKnown) }
             else -> {
                 associateLocAndSched(locations!!, schedules!!)
                     .flatMap { (location, schedule) ->
@@ -186,7 +184,7 @@ internal object LocationScheduleParser {
             // normal building names
             listOf(
                 "외", "위", "상본", "상별", "과", "공A", "공B", "공C", "공D", "연", "빌", "백", "삼", "교", "광", "음",
-                "새천", "이윤재", "대별", "경영", "원", "첨", "루", "공학원", "신", "중입자", "IBS", "KLI", "성", "유", "I자A"
+                "새천", "이윤재", "대별", "경영", "원", "첨", "루", "공학원", "신", "중입자", "IBS", "KLI", "성", "유", "I자A", "아"
             ),
             // sport building name
             listOf(
@@ -194,12 +192,13 @@ internal object LocationScheduleParser {
             ),
             // fucking edge cases
             listOf(
-                "석산홀세미나", "윤주용홀", "제1강의실", "제2강의실", "선수기숙사 트레이닝실", "미우"
+                "석산홀세미나", "윤주용홀", "제1강의실", "제2강의실", "선수기숙사 트레이닝실", "미우", "김대중도서관3층", "의사학과 자료실", "그룹토의실 4번", "의사학과 자료실", "의대131호"
             )
         ).flatten()
 
 
-        internal fun parse(location: String): LocationUnion {
+        internal fun parse(location: String?): LocationUnion {
+            if (location == null) return LocationUnion.UnKnown
             val buildingName: String? = buildingNames.find { buildingName -> location.startsWith(buildingName) }
             if (buildingName != null) {
                 val address = location.removePrefix(buildingName).removePrefix("_").removeSuffix("_")
@@ -211,7 +210,7 @@ internal object LocationScheduleParser {
                 "실시간온라인" -> LocationUnion.RealTimeOnline
                 "동영상_중복수강불가" -> LocationUnion.Online(false)
                 else -> {
-                    return LocationUnion.OffLine(location, null).also { logger.warn("can't parse building name and address from [${location}]. just return {}", it) }
+                    return LocationUnion.OffLine(location, null).also { logger.debug("can't parse building name and address from [${location}]. just return {}", it) }
                 }
             }
 
@@ -244,12 +243,4 @@ internal object LocationScheduleParser {
             }
         }
     }
-}
-
-fun main() {
-    val lectureRespJsonText: String = Path.of("data-2/23-2/lecture.json").toAbsolutePath().normalize().readText()
-    val lectureRespList: List<LectureResponse> = Json.decodeFromString<List<LectureResponse>>(lectureRespJsonText)
-    val lectureList = lectureRespList.flatMap { transfromLectureResp(it) }
-    val lectureListStr: String = Json.encodeToString<List<LectureVo>>(lectureList)
-    Path.of("data-2/23-2/lecture-refined.json").toAbsolutePath().normalize().writeText(lectureListStr)
 }

@@ -4,11 +4,11 @@ import io.gitp.yfls.scarping.job.file.YearSerializer
 import io.gitp.yfls.scarping.job.file.request.MlgInfoResponse
 import io.gitp.ylfs.entity.type.Semester
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
-import java.nio.file.Path
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.time.Year
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 enum class MajorProtectType { ONLY_MAJOR, ALSO_DUAL_MAJOR, UNPROTECT }
 
@@ -77,13 +77,4 @@ object MlgInfoParser {
             else -> throw IllegalStateException("parsing MajorProtectType fucked up. got:$raw")
         }
     }
-}
-
-fun main() {
-    Path.of("data-2/23-2/mlg-info.json").toAbsolutePath().normalize().readText()
-        .let { mlgInfoRespText: String -> Json.decodeFromString<List<MlgInfoResponse>>(mlgInfoRespText) }
-        .map { transformMlgInfoResp(it) }.filterNotNull()
-        .onEach { println(it) }
-        .let { mlgInfoList: List<MlgInfo> -> Json.encodeToString<List<MlgInfo>>(mlgInfoList) }
-        .also { mlgInfoText: String -> Path.of("data-2/23-2/mlg-info-refined.json").toAbsolutePath().normalize().writeText(mlgInfoText) }
 }
