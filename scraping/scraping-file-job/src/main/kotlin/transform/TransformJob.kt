@@ -1,8 +1,6 @@
 package io.gitp.yfls.scarping.job.file.transform
 
-import io.gitp.yfls.scarping.job.file.request.LectureResponse
-import io.gitp.yfls.scarping.job.file.request.MlgInfoResponse
-import io.gitp.yfls.scarping.job.file.request.MlgRankResponse
+import io.gitp.yfls.scarping.job.file.request.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -41,13 +39,30 @@ object TransformJob {
         ResponseParseModule(
             inputFile = Path.of("lecture.json"),
             outputFile = Path.of("lecture-refined.json"),
-            parser =
-                { raw: String ->
-                    Json.decodeFromString<List<LectureResponse>>(raw)
-                        .flatMap { transfromLectureResp(it) }
-                        .let { lectureList: List<LectureVo> -> Json.encodeToString<List<LectureVo>>(lectureList) }
-                }
+            parser = { raw: String ->
+                Json.decodeFromString<List<LectureResponse>>(raw)
+                    .flatMap { transfromLectureResp(it) }
+                    .let { lectureList: List<LectureVo> -> Json.encodeToString<List<LectureVo>>(lectureList) }
+            }
         ),
+        ResponseParseModule(
+            inputFile = Path.of("dpt.json"),
+            outputFile = Path.of("dpt-refined.json"),
+            parser = { raw: String ->
+                Json.decodeFromString<List<DptResponse>>(raw)
+                    .flatMap { transformDpt(it) }
+                    .let { lectureList: List<DptVo> -> Json.encodeToString<List<DptVo>>(lectureList) }
+            }
+        ),
+        ResponseParseModule(
+            inputFile = Path.of("college.json"),
+            outputFile = Path.of("college-refined.json"),
+            parser = { raw: String ->
+                Json.decodeFromString<CollegeResponse>(raw)
+                    .let { transformCollege(it) }
+                    .let { lectureList: List<CollegeVo> -> Json.encodeToString<List<CollegeVo>>(lectureList) }
+            }
+        )
     )
 
     /**
