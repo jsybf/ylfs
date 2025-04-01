@@ -1,4 +1,4 @@
-package io.gitp.ylfs.entity.type
+package io.gitp.ylfs.entity.enums
 
 enum class Semester(val code: Int) {
     FIRST(10),

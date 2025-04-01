@@ -2,8 +2,8 @@ package io.gitp.yfls.scarping.job.file.request
 
 import io.gitp.yfls.scarping.job.file.YearSerializer
 import io.gitp.ylfs.crawl.payload.*
-import io.gitp.ylfs.entity.type.LectureId
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.model.LectureId
+import io.gitp.ylfs.entity.enums.Semester
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import java.time.Year

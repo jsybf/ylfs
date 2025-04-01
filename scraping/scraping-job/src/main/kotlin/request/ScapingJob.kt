@@ -1,7 +1,7 @@
 package io.gitp.yfls.scarping.job.file.request
 
 import io.gitp.ylfs.crawl.client.*
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.enums.Semester
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay

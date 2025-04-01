@@ -1,4 +1,4 @@
-package io.gitp.ylfs.entity.type
+package io.gitp.ylfs.entity.model
 
 data class LectureId(
     val mainId: String,

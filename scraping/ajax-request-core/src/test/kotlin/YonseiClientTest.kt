@@ -1,7 +1,7 @@
 import io.gitp.ylfs.crawl.client.*
 import io.gitp.ylfs.crawl.payload.*
-import io.gitp.ylfs.entity.type.LectureId
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.model.LectureId
+import io.gitp.ylfs.entity.enums.Semester
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.time.Year

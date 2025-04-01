@@ -2,7 +2,7 @@ package io.gitp.yfls.scarping.job.file.transform
 
 import io.gitp.yfls.scarping.job.file.YearSerializer
 import io.gitp.yfls.scarping.job.file.request.MlgRankResponse
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.enums.Semester
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.nio.file.Path

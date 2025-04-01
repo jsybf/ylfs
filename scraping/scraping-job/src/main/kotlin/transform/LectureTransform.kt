@@ -9,7 +9,7 @@ import io.gitp.ylfs.entity.enums.LectureType
 import io.gitp.ylfs.entity.model.LocAndSched
 import io.gitp.ylfs.entity.model.LocationUnion
 import io.gitp.ylfs.entity.model.Period
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.enums.Semester
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory

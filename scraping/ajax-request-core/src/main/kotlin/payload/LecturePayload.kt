@@ -1,6 +1,6 @@
 package io.gitp.ylfs.crawl.payload
 
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.enums.Semester
 import java.time.Year
 
 data class LecturePayload(

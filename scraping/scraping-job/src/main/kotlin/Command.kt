@@ -9,7 +9,7 @@ import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
 import io.gitp.yfls.scarping.job.file.request.job
 import io.gitp.yfls.scarping.job.file.transform.TransformJob
-import io.gitp.ylfs.entity.type.Semester
+import io.gitp.ylfs.entity.enums.Semester
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
