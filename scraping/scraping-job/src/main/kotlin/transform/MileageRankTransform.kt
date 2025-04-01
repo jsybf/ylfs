@@ -10,11 +10,11 @@ import java.time.Year
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-enum class Major(val raw: String) {
+enum class MajorProtectedType(val raw: String) {
     MAJOR("Y(Y)"), DUAL_MAJOR_INCLUDED("Y(N)"), DUAL_MAJOR_UNINCLUDED("N(Y)"), NON_MAJOR("N(N)");
 
     companion object {
-        fun ofRaw(raw: String): Major? = entries.find { it.raw == raw }
+        fun ofRaw(raw: String): MajorProtectedType? = entries.find { it.raw == raw }
     }
 }
 
@@ -31,7 +31,7 @@ data class MlgRankVo(
     val mlgRank: Int,
     val mlgValue: Int,
     val ifDisabled: Boolean,
-    val ifMajor: Major,
+    val ifMajorProtected: MajorProtectedType,
     val appliedSubjectCnt: Int,
     val ifGradePlanned: Boolean,
     val ifFirstApply: Boolean,
@@ -57,7 +57,7 @@ fun transformMlgRankResp(mlgRankResp: MlgRankResponse): List<MlgRankVo> {
             mlgRank = respBody["mlgRank"]!!.jsonPrimitive.int,
             mlgValue = respBody["mlgVal"]!!.jsonPrimitive.int,
             ifDisabled = respBody["dsstdYn"]!!.jsonPrimitive.content.let { MlgRankParser.parseYN2Boolean(it) },
-            ifMajor = respBody["mjsbjYn"]!!.jsonPrimitive.content.let { MlgRankParser.parseMajor(it) },
+            ifMajorProtected = respBody["mjsbjYn"]!!.jsonPrimitive.content.let { MlgRankParser.parseMajor(it) },
             appliedSubjectCnt = respBody["aplySubjcCnt"]!!.jsonPrimitive.int,
             ifGradePlanned = respBody["grdtnAplyYn"]!!.jsonPrimitive.content.let { MlgRankParser.parseYN2Boolean(it) },
             ifFirstApply = respBody["fratlcYn"]!!.jsonPrimitive.content.let { MlgRankParser.parseYN2Boolean(it) },
@@ -70,7 +70,7 @@ fun transformMlgRankResp(mlgRankResp: MlgRankResponse): List<MlgRankVo> {
 }
 
 object MlgRankParser {
-    fun parseMajor(raw: String): Major = Major.ofRaw(raw)!!
+    fun parseMajor(raw: String): MajorProtectedType = MajorProtectedType.ofRaw(raw)!!
     fun parseYN2Boolean(raw: String): Boolean = when (raw) {
         "Y" -> true
         "N" -> false

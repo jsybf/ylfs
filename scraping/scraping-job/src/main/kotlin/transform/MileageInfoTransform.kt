@@ -10,7 +10,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.time.Year
 
-enum class MajorProtectType { ONLY_MAJOR, ALSO_DUAL_MAJOR, UNPROTECT }
+enum class MajorProtectPolicy { ONLY_MAJOR, ALSO_DUAL_MAJOR, UNPROTECT }
 
 @Serializable
 data class MlgInfo(
@@ -23,7 +23,7 @@ data class MlgInfo(
     val subCode: String,
 
     val mileageLimit: Int,
-    val majorProtectType: MajorProtectType,
+    val majorProtectType: MajorProtectPolicy,
 
     val appliedCnt: Int,
     val totalCapacity: Int,
@@ -47,7 +47,7 @@ fun transformMlgInfoResp(mlgInfoResp: MlgInfoResponse): MlgInfo? {
         subCode = mlgInfoResp.request.lectureCode.subCode,
 
         mileageLimit = respBody["usePosblMaxMlgVal"]!!.jsonPrimitive.int,
-        majorProtectType = respBody["mjrprPercpCnt"]!!.jsonPrimitive.content.let { MlgInfoParser.parseMajorProtectType(it) },
+        majorProtectType = respBody["mjrprPercpCnt"]!!.jsonPrimitive.content.let { MlgInfoParser.parseMajorProtectPolicy(it) },
 
         appliedCnt = respBody["cnt"]!!.jsonPrimitive.int,
         totalCapacity = respBody["atnlcPercpCnt"]!!.jsonPrimitive.int,
@@ -68,13 +68,13 @@ object MlgInfoParser {
 
     fun parseMajorCap(raw: String): Int = capture.find(raw)!!.groupValues[1].toInt()
 
-    fun parseMajorProtectType(raw: String): MajorProtectType {
+    fun parseMajorProtectPolicy(raw: String): MajorProtectPolicy {
         val (capacity: Int, ifDualMajorYn: String) = capture.find(raw)!!.destructured.let { (capStr: String, ifDualMajorEnabled: String) -> Pair(capStr.toInt(), ifDualMajorEnabled) }
         return when {
-            capacity == 0 -> MajorProtectType.UNPROTECT
-            0 < capacity && ifDualMajorYn == "N" -> MajorProtectType.ONLY_MAJOR
-            0 < capacity && ifDualMajorYn == "Y" -> MajorProtectType.ALSO_DUAL_MAJOR
-            else -> throw IllegalStateException("parsing MajorProtectType fucked up. got:$raw")
+            capacity == 0 -> MajorProtectPolicy.UNPROTECT
+            0 < capacity && ifDualMajorYn == "N" -> MajorProtectPolicy.ONLY_MAJOR
+            0 < capacity && ifDualMajorYn == "Y" -> MajorProtectPolicy.ALSO_DUAL_MAJOR
+            else -> throw IllegalStateException("parsing MajorProtectPolicy fucked up. got:$raw")
         }
     }
 }
