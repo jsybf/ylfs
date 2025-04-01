@@ -1,7 +1,9 @@
 package io.gitp.yfls.scarping.job.file.transform
 
 import io.gitp.yfls.scarping.job.file.request.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNamingStrategy
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -17,6 +19,9 @@ data class ResponseParseModule(
 
 object TransformJob {
     private val logger = LoggerFactory.getLogger(object {}::class.java)
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private val jsonFormat = Json { namingStrategy = JsonNamingStrategy.SnakeCase }
     private val responseParseList = listOf(
         ResponseParseModule(
             inputFile = Path.of("mlg-info.json"),
@@ -24,7 +29,7 @@ object TransformJob {
             parser = { raw: String ->
                 Json.decodeFromString<List<MlgInfoResponse>>(raw)
                     .mapNotNull { transformMlgInfoResp(it) }
-                    .let { mlgInfoList: List<MlgInfo> -> Json.encodeToString<List<MlgInfo>>(mlgInfoList) }
+                    .let { mlgInfoList: List<MlgInfo> -> jsonFormat.encodeToString<List<MlgInfo>>(mlgInfoList) }
             }
         ),
         ResponseParseModule(
@@ -33,7 +38,7 @@ object TransformJob {
             parser = { raw: String ->
                 Json.decodeFromString<List<MlgRankResponse>>(raw)
                     .flatMap { transformMlgRankResp(it) }
-                    .let { mlgInfoList: List<MlgRankVo> -> Json.encodeToString<List<MlgRankVo>>(mlgInfoList) }
+                    .let { mlgInfoList: List<MlgRankVo> -> jsonFormat.encodeToString<List<MlgRankVo>>(mlgInfoList) }
             }
         ),
         ResponseParseModule(
@@ -42,7 +47,7 @@ object TransformJob {
             parser = { raw: String ->
                 Json.decodeFromString<List<LectureResponse>>(raw)
                     .flatMap { transfromLectureResp(it) }
-                    .let { lectureList: List<LectureVo> -> Json.encodeToString<List<LectureVo>>(lectureList) }
+                    .let { lectureList: List<LectureVo> -> jsonFormat.encodeToString<List<LectureVo>>(lectureList) }
             }
         ),
         ResponseParseModule(
@@ -51,7 +56,7 @@ object TransformJob {
             parser = { raw: String ->
                 Json.decodeFromString<List<DptResponse>>(raw)
                     .flatMap { transformDpt(it) }
-                    .let { lectureList: List<DptVo> -> Json.encodeToString<List<DptVo>>(lectureList) }
+                    .let { lectureList: List<DptVo> -> jsonFormat.encodeToString<List<DptVo>>(lectureList) }
             }
         ),
         ResponseParseModule(
@@ -60,7 +65,7 @@ object TransformJob {
             parser = { raw: String ->
                 Json.decodeFromString<CollegeResponse>(raw)
                     .let { transformCollege(it) }
-                    .let { lectureList: List<CollegeVo> -> Json.encodeToString<List<CollegeVo>>(lectureList) }
+                    .let { lectureList: List<CollegeVo> -> jsonFormat.encodeToString<List<CollegeVo>>(lectureList) }
             }
         )
     )
