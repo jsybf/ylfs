@@ -11,7 +11,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 enum class MajorProtectedType(val raw: String) {
-    MAJOR("Y(Y)"), DUAL_MAJOR_INCLUDED("Y(N)"), DUAL_MAJOR_UNINCLUDED("N(Y)"), NON_MAJOR("N(N)");
+    MAJOR_PROTECTED("Y(Y)"), DUAL_MAJOR_PROTECTED("Y(N)"), DUAL_MAJOR_NOT_PROTECTED("N(Y)"), NOT_PROTECTED("N(N)");
 
     companion object {
         fun ofRaw(raw: String): MajorProtectedType? = entries.find { it.raw == raw }

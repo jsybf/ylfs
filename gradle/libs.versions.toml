@@ -9,20 +9,16 @@ exposed_version = "0.59.0"
 [libraries]
 logging-logback = { group = "ch.qos.logback", name = "logback-classic", version = "1.5.16" }
 logging-slf4j = { group = "org.slf4j", name = "slf4j-api", version = "2.0.16" }
-
-
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.8.0" }
-
 mysql-connector-java = { group = "mysql", name = "mysql-connector-java", version = "8.0.33" }
 exposed-core = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed_version" }
 exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed_version" }
 exposed-java-time = { group = "org.jetbrains.exposed", name = "exposed-java-time", version.ref = "exposed_version" }
 exposed-json = { group = "org.jetbrains.exposed", name = "exposed-json", version.ref = "exposed_version" }
-
+duckdb = { group = "org.duckdb", name = "duckdb_jdbc", version = "1.2.1" }
 hikari-cp = { group = "com.zaxxer", name = "HikariCP", version = "6.2.1" }
-
 clikt = { group = "com.github.ajalt.clikt", name = "clikt", version = "5.0.3" }
-kotlinx-coroutines-core = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.1"}
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.1" }
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin_version" }
