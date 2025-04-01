@@ -6,22 +6,18 @@ plugins {
 
 dependencies {
     implementation(project(":entity-module"))
+    implementation(project(":scraping:ajax-request-core"))
 
     implementation(libs.logging.logback)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
-
     implementation(libs.mysql.connector.java)
-    implementation(libs.exposed.core)
-    implementation(libs.exposed.jdbc)
-    implementation(libs.exposed.java.time)
-    implementation(libs.exposed.json)
     implementation(libs.hikari.cp)
-
     implementation(libs.clikt)
 
 }
 
-val mainClassRef = "io.gitp.ylfs.scraping.scraping_tl_job.jobs.lecture.DemoKt"
+val mainClassRef = "io.gitp.yfls.scarping.job.file.MainKt"
 
 application {
     mainClass = mainClassRef

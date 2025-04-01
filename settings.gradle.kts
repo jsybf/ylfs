@@ -5,7 +5,5 @@ plugins {
 rootProject.name = "ylfs"
 
 include(":entity-module")
-include(":scraping:ajax-crawl-core")
-include(":scraping:scraping-req-job")
-include(":scraping:scraping-file-job")
-include(":scraping:scraping-etl-job")
+include(":scraping:ajax-request-core")
+include(":scraping:scraping-job")
