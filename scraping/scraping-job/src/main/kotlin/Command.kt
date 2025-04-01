@@ -73,3 +73,18 @@ class TransformRawResponseFileCommand() : CliktCommand("transform") {
         TransformJob.run(inputDir, outputDir)
     }
 }
+
+class LoadToMysqlCommand() : CliktCommand("load") {
+    private val logger = LoggerFactory.getLogger(object {}::class.java)
+
+    private val inputDir: Path by option("--input_dir", "-i").convert { Path.of(it) }.required()
+    private val mysqlHost: String by option("--mysql_host", envvar = "YLFS_MYSQL_HOST").required()
+    private val mysqlPort: String by option("--mysql_port", envvar = "YLFS_MYSQL_PORT").required()
+    private val mysqlDatabase: String by option("--mysql_db", envvar = "YLFS_MYSQL_DB").required()
+    private val mysqlUser: String by option("--mysql_user", envvar = "YLFS_MYSQL_USER").required()
+    private val mysqlPassword: String by option("--mysql_user", envvar = "YLFS_MYSQL_USER").required()
+
+    override fun run() {
+        TODO()
+    }
+}
