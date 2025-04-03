@@ -1,13 +1,50 @@
 package io.gitp.yfls.scarping.job.file.load
 
 import io.gitp.ylfs.entity.enums.Semester
+import kotlinx.serialization.json.*
 import org.duckdb.DuckDBConnection
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.sql.DriverManager
 import java.time.Year
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+
+data class DataFilePaths(
+    val collegeFile: Path,
+    val dptFile: Path,
+    val lectureFile: Path,
+    val mlgInfoFile: Path,
+    val mlgRankFile: Path
+)
 
 object Load2MysqlJob {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private fun DuckDBConnection.execLogged(sql: String): Unit = this.createStatement().use { conn ->
+        logger.info("excuting duckdb query:\n{}", sql)
+        conn.execute(sql)
+    }
+
+    private fun findDataFilePaths(baseDir: Path): DataFilePaths = DataFilePaths(
+        collegeFile = baseDir.resolve("college-refined.json").also { require(it.exists()) { "can't find ${it}" } },
+        dptFile = baseDir.resolve("dpt-refined.json").also { require(it.exists()) { "can't find ${it}" } },
+        lectureFile = baseDir.resolve("lecture-refined.json").also { require(it.exists()) { "can't find ${it}" } },
+        mlgInfoFile = baseDir.resolve("mlg-info-refined.json").also { require(it.exists()) { "can't find ${it}" } },
+        mlgRankFile = baseDir.resolve("mlg-rank-refined.json").also { require(it.exists()) { "can't find ${it}" } },
+    )
+
+    /**
+     * determine year and semester based on college-refined.json
+     */
+    private fun determineTerm(collegeFile: Path): Pair<Year, Semester> {
+        val collegeSample = Json.parseToJsonElement(collegeFile.readText()).jsonArray.first().jsonObject
+        return Pair(
+            collegeSample["year"]!!.jsonPrimitive.int.let { Year.of(it) },
+            collegeSample["semester"]!!.jsonPrimitive.content.let { Semester.valueOf(it) }
+        )
+    }
+
     fun run(
         inputDir: Path,
         mysqlHost: String,
@@ -15,22 +52,49 @@ object Load2MysqlJob {
         mysqlDatabase: String,
         mysqlUser: String,
         mysqlPassword: String
-    ) {
+    ) = (DriverManager.getConnection("jdbc:duckdb:") as DuckDBConnection).use { conn ->
+        // find json files
+        val dataFilePaths: DataFilePaths = findDataFilePaths(inputDir)
+        /** json file to duckdb **/
+        conn.execLogged(Load2DuckDBStatment.DDL.collegeTbl)
+        conn.execLogged(Load2DuckDBStatment.LoadStatment.buildCollegeLoadSql(dataFilePaths.collegeFile))
+        conn.execLogged(Load2DuckDBStatment.DDL.dptTbl)
+        conn.execLogged(Load2DuckDBStatment.LoadStatment.buildDptLoadSql(dataFilePaths.dptFile))
+        conn.execLogged(Load2DuckDBStatment.DDL.lectureTbl)
+        conn.execLogged(Load2DuckDBStatment.LoadStatment.buildLectureLoadSql(dataFilePaths.lectureFile))
+        conn.execLogged(Load2DuckDBStatment.DDL.mlgInfoTbl)
+        conn.execLogged(Load2DuckDBStatment.LoadStatment.buildMlgInfoLoadSql(dataFilePaths.mlgInfoFile))
+        conn.execLogged(Load2DuckDBStatment.DDL.mlgRankTbl)
+        conn.execLogged(Load2DuckDBStatment.LoadStatment.buildMlgRankLoadSql(dataFilePaths.mlgRankFile))
 
+        /** duckdb to mysql **/
+        conn.execLogged(DuckDB2MysqlStatment.MysqlConnection.buildMysqlExtensionInstallAndLoad())
+        conn.execLogged(DuckDB2MysqlStatment.MysqlConnection.buildMysqlAttach(mysqlHost, mysqlPort, mysqlDatabase, mysqlUser, mysqlPassword))
+
+        val (year: Year, semester: Semester) = determineTerm(dataFilePaths.collegeFile)
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertTerm(year, semester))
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertCollege(year, semester))
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertDepartment(year, semester))
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertLecture(year, semester))
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertSubclass(year, semester))
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertMileageInfo(year, semester))
+        conn.execLogged(DuckDB2MysqlStatment.Load2Mysql.insertMileageRank(year, semester))
     }
+
 }
 
 
-object Load2DuckDB {
-    val collegeTableDDL = """
+object Load2DuckDBStatment {
+    object DDL {
+        val collegeTbl = """
         CREATE TABLE college(
             year              INT           NOT NULL,
             semester          VARCHAR(6)    NOT NULL,
             college_code      CHAR(6)       NOT NULL,
             college_name      VARCHAR(100)   NOT NULL
         );
-    """
-    val dptTableDDL = """
+        """
+        val dptTbl = """
         CREATE TABLE dpt(
             year              INT           NOT NULL,
             semester          VARCHAR(6)    NOT NULL,
@@ -38,9 +102,9 @@ object Load2DuckDB {
             dpt_code          CHAR(5)       NOT NULL,
             dpt_name          VARCHAR(100)   NOT NULL
         );
-    """
+        """
 
-    val lectureTableDDL = """
+        val lectureTbl = """
         CREATE TABLE lecture (
             year              INT           NOT NULL,
             semester          VARCHAR(6)    NOT NULL,
@@ -56,8 +120,8 @@ object Load2DuckDB {
             language          VARCHAR(10)   NOT NULL CHECK ( language IN ('KOREAN', 'ENGLISH', 'ETC') ),
             loc_sched         JSON NOT NULL,
         );
-    """
-    val mlgInfoDDL = """
+        """
+        val mlgInfoTbl = """
         CREATE TABLE mlg_info (
             year                     INT            NOT NULL,
             semester                 VARCHAR(6)     NOT NULL,
@@ -79,9 +143,8 @@ object Load2DuckDB {
             grade_5_capacity         INT            NOT NULL,
             grade_6_capacity         INT            NOT NULL,
         );
-    """
-
-    val mlgRankDDL = """
+        """
+        val mlgRankTbl = """
         CREATE TABLE mlg_rank (
             year                     INT            NOT NULL,
             semester                 VARCHAR(6)     NOT NULL,
@@ -102,167 +165,151 @@ object Load2DuckDB {
             total_credit             DECIMAL(10, 2) NOT NULL,
             total_credit_fraction    VARCHAR(10)    NOT NULL,
         );
-    """
+        """
+    }
 
-
-    fun buildDptLoadSql(dptRespFile: Path): String = """
+    object LoadStatment {
+        fun buildDptLoadSql(dptRespFile: Path): String = """
         INSERT INTO dpt
         SELECT 
-            year         AS  year,
-            semester     AS  semester,
-            college_code AS  college_code,
-            dpt_code     AS  dpt_code,
-            name         AS  dpt_name
+            year,
+            semester,
+            college_code,
+            dpt_code,
+            name
         FROM
             read_json('${dptRespFile}')
         ;
         """
-        .trimIndent()
-        .also { assert(dptRespFile.isAbsolute) }
+            .also { assert(dptRespFile.isAbsolute) }
 
-    fun buildCollegeLoadSql(collegeRespFile: Path): String = """
+        fun buildCollegeLoadSql(collegeRespFile: Path): String = """
         INSERT INTO college
         SELECT 
-            year         AS  year,
-            semester     AS  semester,
-            college_code AS  college_code,
-            name         AS  college_name
+            year,
+            semester,    
+            college_code,
+            name,
         FROM read_json('${collegeRespFile}')
         ;
         """
-        .trimIndent()
-        .also { println(it) }
-        .also { assert(collegeRespFile.isAbsolute) }
+            .also { assert(collegeRespFile.isAbsolute) }
 
-    fun buildLectureLoadSql(lectureRespFile: Path) = """
+        fun buildLectureLoadSql(lectureRespFile: Path) = """
         INSERT INTO lecture
         SELECT
-            year               AS  year,
-            semester           AS  semester,
-            main_code          AS  main_code,
-            class_code         AS  class_code,
-            sub_code           AS  sub_code,
-            name               AS  name,
-            professors         AS  professors,
-            grades             AS  grades,
-            credit             AS  credit,
-            grade_eval_method  AS  grade_eval_method,
-            lecture_type       AS  lecture_type,
-            language           AS  language,
-            loc_and_sched_list AS  loc_sched,
+            year,
+            semester,
+            main_code,
+            class_code,
+            sub_code,
+            name,
+            professors,
+            grades,
+            credit,
+            grade_eval_method,
+            lecture_type,
+            language,
+            loc_and_sched_list,
         FROM read_json('${lectureRespFile}')
         ;
-    """.trimIndent()
-        .also { assert(lectureRespFile.isAbsolute) }
+    """
+            .also { assert(lectureRespFile.isAbsolute) }
 
-    fun buildMlgRankLoadSql(mlgRankRespFile: Path) = """
+        fun buildMlgRankLoadSql(mlgRankRespFile: Path) = """
         INSERT INTO mlg_rank
         SELECT
-            year                    AS  year,
-            semester                AS  semester,
-            main_code               AS  main_code,
-            class_code              AS  class_code,
-            sub_code                AS  sub_code,
-            -- grade                   AS  grade,
-            if_success              AS  if_sucess,
-            mlg_rank                AS  mlg_rank,
-            mlg_value               AS  mlg_value,
-            if_disabled             AS  if_disabled,
-            if_major_protected      AS  if_major_protected,
-            applied_subject_cnt     AS  applied_lecture_cnt,
-            if_grade_planned        AS  if_graduated_planned,
-            if_first_apply          AS  if_first_apply,
-            last_semester_ratio     AS  tSemesterRatio,
-            last_semesterratio_frac AS  tSemesterratioFrac,
-            total_credit_ratio      AS  total_credit,
+            year,
+            semester,
+            main_code,
+            class_code,
+            sub_code,
+            -- grade,
+            if_success,
+            mlg_rank,
+            mlg_value,
+            if_disabled,
+            if_major_protected,
+            applied_subject_cnt,
+            if_grade_planned,
+            if_first_apply,
+            last_semester_ratio,
+            last_semesterratio_frac,
+            total_credit_ratio,
             total_credit_ratio_frac AS  total_credit_faction
         FROM read_json('${mlgRankRespFile}')
         ;
     """
-        .also { assert(mlgRankRespFile.isAbsolute) }
+            .also { assert(mlgRankRespFile.isAbsolute) }
 
-    fun buildMlgInfoLoadSql(mlgInfoRespFile: Path) = """
+        fun buildMlgInfoLoadSql(mlgInfoRespFile: Path) = """
         INSERT INTO mlg_info
         SELECT 
-            year                  AS  year,
-            semester              AS  semester,
-            main_code             AS  main_code,
-            class_code            AS  class_code,
-            sub_code              AS  sub_code,
-            mileage_limit         AS  mileage_limit,
-            major_protect_type    AS  major_protect_type,
-            applied_cnt           AS  applied_cnt,
-            total_capacity        AS  total_capacity,
-            major_capacity        AS  major_capacity,
-            per_major_capacity[1] AS  grade_1_capacity,
-            per_major_capacity[2] AS  grade_2_capacity,
-            per_major_capacity[3] AS  grade_3_capacity,
-            per_major_capacity[4] AS  grade_4_capacity,
-            per_major_capacity[5] AS  grade_5_capacity,
-            per_major_capacity[6] AS  grade_6_capacity
+            year,
+            semester,
+            main_code,
+            class_code,
+            sub_code,
+            mileage_limit as mlg_limit,
+            major_protect_type,
+            applied_cnt,
+            total_capacity,
+            major_capacity,
+            per_major_capacity[1],
+            per_major_capacity[2],
+            per_major_capacity[3],
+            per_major_capacity[4],
+            per_major_capacity[5],
+            per_major_capacity[6]
         FROM  read_json('${mlgInfoRespFile}')
         ;
     """
-        .also { assert(mlgInfoRespFile.isAbsolute) }
+            .also { assert(mlgInfoRespFile.isAbsolute) }
 
+    }
 }
 
-object DuckDB2Mysql {
-    fun buildMysqlSecret(
-        mysqlHost: String,
-        mysqlPort: String,
-        mysqlDatabase: String,
-        mysqlUser: String,
-        mysqlPassword: String
-    ) = """
-        CREATE SECRET (
-            TYPE mysql,
-            HOST '${mysqlHost}',
-            PORT ${mysqlPort},
-            DATABASE ${mysqlDatabase},
-            USER '${mysqlUser}',
-            PASSWORD '${mysqlPassword}'
-        );
-    """.trimIndent()
-
-    fun buildMysqlExtensionInstallAndLoad() = """
+object DuckDB2MysqlStatment {
+    object MysqlConnection {
+        fun buildMysqlExtensionInstallAndLoad() = """
         INSTALL mysql;
         LOAD mysql;
-    """.trimIndent()
+    """
 
-    fun buildMysqlAttach(
-        mysqlHost: String,
-        mysqlPort: String,
-        mysqlDatabase: String,
-        mysqlUser: String,
-        mysqlPassword: String
-    ) = """
+        fun buildMysqlAttach(
+            mysqlHost: String,
+            mysqlPort: String,
+            mysqlDatabase: String,
+            mysqlUser: String,
+            mysqlPassword: String
+        ) = """
         ATTACH 'host=${mysqlHost} port=${mysqlPort} user=${mysqlUser} password=${mysqlPassword} database=${mysqlDatabase}' AS mysql_db (TYPE mysql);
-        use mysql_db;
-    """.trimIndent()
+    """
+    }
 
-    fun insertTerm(year: Year, semester: Semester) = """
+    object Load2Mysql {
+        fun insertTerm(year: Year, semester: Semester) = """
         INSERT INTO mysql_db.term VALUES (${year}, '${semester}');
-    """.trimIndent()
+    """
 
-
-    fun insertCollege(year: Year, semester: Semester) = """
+        fun insertCollege(year: Year, semester: Semester) = """
         INSERT INTO mysql_db.college(year, semester, college_code, college_name)
             SELECT year, semester, college_code, college_name
             FROM college
             WHERE year = ${year} AND semester = '${semester}'
         ;
-    """.trimIndent()
+    """
 
-    fun insertDepartment(year: Year, semester: Semester) = """
-        INSERT INTO mysql_db.college(year, semester, college_code, college_name)
-            SELECT year, semester, college_code, college_name
-            FROM college
+        fun insertDepartment(year: Year, semester: Semester) = """
+        INSERT INTO mysql_db.dpt(college_id, dpt_code, dpt_name)
+            SELECT c.college_id, d.dpt_code, d.dpt_name
+            FROM dpt AS d
+            JOIN mysql_db.college AS c USING(year, semester, college_code)
             WHERE year = ${year} AND semester = '${semester}'
         ;
-    """.trimIndent()
+    """
 
-    fun insertLecture(year: Year, semester: Semester) = """
+        fun insertLecture(year: Year, semester: Semester) = """
         INSERT INTO mysql_db.lecture (
             year,
             semester,
@@ -278,18 +325,9 @@ object DuckDB2Mysql {
         WITH
             sub_code_partition AS (
                 SELECT 
-                    year,
-                    semester,
-                    main_code,
-                    class_code,
-                    name,
-                    professors,
-                    grades,
-                    credit,
-                    grade_eval_method,
-                    language,
+                    *,
                     row_number() OVER (PARTITION BY year, semester, main_code, class_code  ORDER BY sub_code) as sub_code_row
-                FROM lecture
+                FROM main.lecture
             ),
             duplicate_dropped AS (
                 SELECT *
@@ -302,18 +340,17 @@ object DuckDB2Mysql {
             main_code,
             class_code,
             name,
-            array_to_string(professors, ',') AS professor_list,
-            array_to_string(grades, ',') AS grade_list,
+            to_json(professors),
+            to_json(grades),
             credit,
             grade_eval_method,
             language
         FROM duplicate_dropped
         WHERE year = ${year} AND semester = '${semester}'
         ;
-    """.trimIndent()
+    """
 
-
-    fun insertSubclass(year: Year, semester: Semester) = """
+        fun insertSubclass(year: Year, semester: Semester) = """
         INSERT INTO mysql_db.subclass(
             lecture_id,
             sub_code,
@@ -344,10 +381,9 @@ object DuckDB2Mysql {
         JOIN mysql_db.lecture AS l USING (year, semester, main_code, class_code)
         where sg.year = ${year} AND sg.semester = '${semester}'
         ;
-    """.trimIndent()
+    """
 
-
-    fun insertMileageInfo(year: Year, semester: Semester) = """
+        fun insertMileageInfo(year: Year, semester: Semester) = """
         INSERT INTO mysql_db.mlg_info(
             subclass_id,
 
@@ -364,29 +400,37 @@ object DuckDB2Mysql {
             grade_5_capacity,
             grade_6_capacity
         )
+        WITH
+            mlg_info_partition AS (
+                SELECT *,row_number() OVER (PARTITION BY year, semester, main_code, class_code, sub_code) as row_num
+                FROM mlg_info
+            ),
+            mlg_info_distinct AS (
+                select *
+                FROM  mlg_info_partition
+                WHERE row_num = 1
+            )
         SELECT
-            s.subclass_id,
-
-            mi.mlg_limit,
-            mi.major_protect_type,
-            mi.applied_cnt,
-
-            mi.total_capacity,
-            mi.major_protected_capacity,
-            mi.grade_1_capacity,
-            mi.grade_2_capacity,
-            mi.grade_3_capacity,
-            mi.grade_4_capacity,
-            mi.grade_5_capacity,
-            mi.grade_6_capacity
-        FROM mlg_info AS mi
-        JOIN mysql_db.lecture AS l USING (year, semester, main_code, class_code)
-        JOIN mysql_db.subclass AS s USING (lecture_id, sub_code)
-        WHERE mi.year = ${year} AND mi.semester = '${semester}'
+            subclass_id,
+            mlg_limit,
+            major_protect_type,
+            applied_cnt,
+            total_capacity,
+            major_protected_capacity,
+            grade_1_capacity,
+            grade_2_capacity,
+            grade_3_capacity,
+            grade_4_capacity,
+            grade_5_capacity,
+            grade_6_capacity
+        FROM mlg_info_distinct
+        JOIN mysql_db.lecture USING (year, semester, main_code, class_code)
+        JOIN mysql_db.subclass USING (lecture_id, sub_code)
+        WHERE year = ${year} AND semester = '${semester}'
         ;
-    """.trimIndent()
+    """
 
-    fun insertMileageRank(year: Year, semester: Semester) = """
+        fun insertMileageRank(year: Year, semester: Semester) = """
         INSERT INTO mysql_db.mlg_rank(
             subclass_id,
             if_succeed,
@@ -405,7 +449,7 @@ object DuckDB2Mysql {
             total_credit,
             total_credit_fraction
         )
-        SELECT
+        SELECT DISTINCT
             s.subclass_id,
             mr.if_succeed,
 
@@ -422,63 +466,16 @@ object DuckDB2Mysql {
             mr.last_term_credit_faction,
             mr.total_credit,
             mr.total_credit_fraction
-        FROM
-            mlg_rank as mr
+        FROM mlg_rank as mr
         JOIN
             mysql_db.lecture as l USING (year, semester, main_code, class_code)
         JOIN
             mysql_db.subclass as s USING (lecture_id, sub_code)
         WHERE
-            r.year = ${year} AND r.semester = '${semester}'
+            mr.year = ${year} AND mr.semester = '${semester}'
         ;
-    """.trimIndent()
-}
-
-private val logger = LoggerFactory.getLogger(object {}::class.java)
-fun DuckDBConnection.execLogged(sql: String): Unit = this.createStatement().use { conn ->
-    logger.info("excuting duckdb query:\n{}", sql)
-    conn.execute(sql)
-}
-
-fun DuckDBConnection.execLoggedList(sqlList: List<String>): Unit = this.createStatement().use { conn ->
-    sqlList.forEach { sql ->
-        logger.info("excuting duckdb query:\n{}", sql)
-        conn.execute(sql)
+    """
     }
-}
 
-fun main() {
-    val conn: DuckDBConnection = DriverManager.getConnection("jdbc:duckdb:") as DuckDBConnection
-
-    val baseDir = Path.of("/Users/gitp/gitp/dev/projects/ylfs/data/refined/23-2")
-    val year = Year.of(2023)
-    val semester = Semester.FIRST
-    conn.execLoggedList(
-        listOf(
-            Load2DuckDB.collegeTableDDL,
-            Load2DuckDB.buildCollegeLoadSql(baseDir.resolve("college-refined.json")),
-            Load2DuckDB.dptTableDDL,
-            Load2DuckDB.buildDptLoadSql(baseDir.resolve("dpt-refined.json")),
-            Load2DuckDB.lectureTableDDL,
-            Load2DuckDB.buildLectureLoadSql(baseDir.resolve("lecture-refined.json")),
-            Load2DuckDB.mlgRankDDL,
-            Load2DuckDB.buildMlgRankLoadSql(baseDir.resolve("mlg-rank-refined.json")),
-            Load2DuckDB.mlgInfoDDL,
-            Load2DuckDB.buildMlgInfoLoadSql(baseDir.resolve("mlg-info-refined.json")),
-            DuckDB2Mysql.buildMysqlExtensionInstallAndLoad(),
-            DuckDB2Mysql.buildMysqlAttach("3.39.233.95", "3306", "ylfs", "root", "root_pass"),
-            DuckDB2Mysql.insertTerm(year, semester),
-            DuckDB2Mysql.insertCollege(year, semester),
-            DuckDB2Mysql.insertDepartment(year, semester),
-            DuckDB2Mysql.insertLecture(year, semester),
-            DuckDB2Mysql.insertSubclass(year, semester),
-            DuckDB2Mysql.insertMileageInfo(year, semester),
-            DuckDB2Mysql.insertMileageRank(year, semester),
-        )
-    )
-
-
-
-    conn.close()
 }
 

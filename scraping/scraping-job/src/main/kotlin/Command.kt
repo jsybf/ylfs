@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
+import io.gitp.yfls.scarping.job.file.load.Load2MysqlJob
 import io.gitp.yfls.scarping.job.file.request.job
 import io.gitp.yfls.scarping.job.file.transform.TransformJob
 import io.gitp.ylfs.entity.enums.Semester
@@ -74,17 +75,32 @@ class TransformRawResponseFileCommand() : CliktCommand("transform") {
     }
 }
 
-class LoadToMysqlCommand() : CliktCommand("load") {
+class Load2MysqlCommand() : CliktCommand("load") {
     private val logger = LoggerFactory.getLogger(object {}::class.java)
 
     private val inputDir: Path by option("--input_dir", "-i").convert { Path.of(it) }.required()
-    private val mysqlHost: String by option("--mysql_host", envvar = "YLFS_MYSQL_HOST").required()
-    private val mysqlPort: String by option("--mysql_port", envvar = "YLFS_MYSQL_PORT").required()
-    private val mysqlDatabase: String by option("--mysql_db", envvar = "YLFS_MYSQL_DB").required()
-    private val mysqlUser: String by option("--mysql_user", envvar = "YLFS_MYSQL_USER").required()
-    private val mysqlPassword: String by option("--mysql_user", envvar = "YLFS_MYSQL_USER").required()
+    private val mysqlHost: String by option("--mysql_host", "-m_h", envvar = "YLFS_MYSQL_HOST").required()
+    private val mysqlPort: String by option("--mysql_port", "-m_p", envvar = "YLFS_MYSQL_PORT").required()
+    private val mysqlDatabase: String by option("--mysql_db", "-m_db", envvar = "YLFS_MYSQL_DB").required()
+    private val mysqlUser: String by option("--mysql_user", "-m_u", envvar = "YLFS_MYSQL_USER").required()
+    private val mysqlPassword: String by option("--mysql_password", "-m_pw", envvar = "YLFS_MYSQL_PASSWORD").required()
 
     override fun run() {
-        TODO()
+        logger.info("====param====")
+        logger.info("inputDir:{}", inputDir)
+        logger.info("mysqlHost:{}", mysqlHost)
+        logger.info("mysqlPort:{}", mysqlPort)
+        logger.info("mysqlDatabase:{}", mysqlDatabase)
+        logger.info("mysqlUser:{}", mysqlUser)
+        logger.info("mysqlPassword:{}", mysqlPassword)
+        logger.info("=============")
+        Load2MysqlJob.run(
+            inputDir = inputDir,
+            mysqlHost = mysqlHost,
+            mysqlPort = mysqlPort,
+            mysqlDatabase = mysqlDatabase,
+            mysqlUser = mysqlUser,
+            mysqlPassword = mysqlPassword
+        )
     }
 }
