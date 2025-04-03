@@ -1,28 +1,22 @@
 plugins {
     id("kotlin-convention")
     alias(libs.plugins.kotlinx.serialization)
-    id("application")
 }
 
 dependencies {
     implementation(project(":entity-module"))
     implementation(project(":scraping:ajax-request-core"))
 
+    implementation(libs.clikt)
     implementation(libs.logging.logback)
     implementation(libs.duckdb)
+    implementation(libs.mysql.connector.java)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.mysql.connector.java)
-    implementation(libs.hikari.cp)
-    implementation(libs.clikt)
 
 }
 
 val mainClassRef = "io.gitp.yfls.scarping.job.file.MainKt"
-
-application {
-    mainClass = mainClassRef
-}
 
 tasks.register<Jar>("fatJar") {
     group = "custom tasks"
@@ -31,7 +25,7 @@ tasks.register<Jar>("fatJar") {
     with(tasks.jar.get())
 
     manifest.attributes["Main-Class"] = mainClassRef
-    archiveFileName = "${archiveBaseName.get()}-exec.jar"
+    archiveFileName = "${archiveBaseName.get()}.jar"
     destinationDirectory = file("$rootDir/jars")
 
     val dependencies = configurations
