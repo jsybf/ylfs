@@ -7,6 +7,7 @@ fun main(args: Array<String>) = CommandRoot()
     .subcommands(
         ScapeThenSaveFileCommand(),
         TransformRawResponseFileCommand(),
-        Load2MysqlCommand()
+        Load2MysqlCommand(),
+        MysqlInitCommand()
     )
     .main(args)

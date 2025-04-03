@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
+import io.gitp.yfls.scarping.job.file.load.InitMysqlJob
 import io.gitp.yfls.scarping.job.file.load.Load2MysqlJob
 import io.gitp.yfls.scarping.job.file.request.job
 import io.gitp.yfls.scarping.job.file.transform.TransformJob
@@ -103,4 +104,33 @@ class Load2MysqlCommand() : CliktCommand("load") {
             mysqlPassword = mysqlPassword
         )
     }
+}
+
+class MysqlInitCommand() : CliktCommand("mysql-init") {
+    private val logger = LoggerFactory.getLogger(object {}::class.java)
+    private val mysqlHost: String by option("--mysql_host", "-m_h", envvar = "YLFS_MYSQL_HOST").required()
+    private val mysqlPort: String by option("--mysql_port", "-m_p", envvar = "YLFS_MYSQL_PORT").required()
+    private val mysqlUser: String by option("--mysql_user", "-m_u", envvar = "YLFS_MYSQL_USER").required()
+    private val mysqlPassword: String by option("--mysql_password", "-m_pw", envvar = "YLFS_MYSQL_PASSWORD").required()
+
+    override fun run() {
+        logger.info("====param====")
+        logger.info("mysqlHost:{}", mysqlHost)
+        logger.info("mysqlPort:{}", mysqlPort)
+        logger.info("mysqlUser:{}", mysqlUser)
+        logger.info("mysqlPassword:{}", mysqlPassword)
+        logger.info("=============")
+        InitMysqlJob.run(
+            mysqlHost = mysqlHost,
+            mysqlPort = mysqlPort,
+            mysqlUser = mysqlUser,
+            mysqlPassword = mysqlPassword
+        )
+    }
+}
+
+
+fun main() {
+    val ddlScript: String = object {}::class.java.getResource("/ddl.sql")?.readText() ?: throw IllegalStateException("ddl.sql doesn't exist in resource dir")
+    println(ddlScript)
 }
